@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0d0c0b">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,500&family=Unbounded:wght@600&display=swap">
 <style>
 /* Одна сцена: шапка с таймером, билет по центру, кнопки — под большим пальцем. */
 :root {
@@ -22,7 +22,7 @@
   --ink-soft: #7b7266;
   --red: #d7261e;        /* только точка «Киношная.» и звезды (и последние 10 секунд) */
   --line: rgba(242, 234, 219, 0.16);
-  --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --display: 'Unbounded', 'Arial Black', 'Helvetica Neue', Arial, sans-serif; /* вместо Benzin Semibold, пока нет веб-лицензии */
   --sans: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
   color-scheme: dark;
 }
@@ -47,13 +47,13 @@ button { cursor: pointer; touch-action: manipulation; }
 
 /* ---------- Шапка ---------- */
 .bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding-block: 10px 6px; gap: 8px; }
-.brand { font-family: var(--serif); font-weight: 700; font-size: 18px; line-height: 1; white-space: nowrap; }
+.brand { font-family: var(--display); font-weight: 600; font-size: 15px; line-height: 1; white-space: nowrap; }
 .brand small { display: block; font-family: var(--sans); font-weight: 600; font-size: 9px; letter-spacing: .24em; color: var(--muted); margin-bottom: 3px; }
 .dot { color: var(--red); }
 .tools { display: flex; justify-content: flex-end; gap: 6px; }
 .icon-btn { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: transparent; display: grid; place-items: center; }
 .icon-btn svg { width: 20px; height: 20px; }
-.clock { font-family: var(--serif); font-weight: 900; font-size: 52px; line-height: 1; font-variant-numeric: tabular-nums lining-nums; min-width: 2.2ch; text-align: center; transition: color .2s; }
+.clock { font-family: var(--display); font-weight: 600; font-size: 44px; line-height: 1; font-variant-numeric: tabular-nums lining-nums; min-width: 2.2ch; text-align: center; transition: color .2s; }
 .clock.idle { color: var(--night-3); }
 .clock.hurry { color: var(--red); animation: pulse 1s steps(1) infinite; }
 .clock.off { font-size: 15px; font-family: var(--sans); font-weight: 600; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
@@ -63,7 +63,7 @@ button { cursor: pointer; touch-action: manipulation; }
 .score { display: flex; gap: 6px; overflow-x: auto; padding-block: 4px 2px; scrollbar-width: none; }
 .score::-webkit-scrollbar { display: none; }
 .team { flex: 0 0 auto; display: flex; align-items: baseline; gap: 8px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); font-size: 13px; color: var(--muted); max-width: 70vw; }
-.team b { font-family: var(--serif); font-weight: 900; font-size: 17px; color: var(--cream); font-variant-numeric: lining-nums tabular-nums; }
+.team b { font-family: var(--display); font-weight: 600; font-size: 15px; color: var(--cream); font-variant-numeric: lining-nums tabular-nums; }
 .team span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .team.now { background: var(--cream); color: var(--ink); border-color: var(--cream); }
 .team.now b { color: var(--ink); }
@@ -82,7 +82,8 @@ button { cursor: pointer; touch-action: manipulation; }
 .note { text-align: center; color: var(--muted); font-size: 13px; }
 
 /* ---------- Билет: вертикальная карточка во весь экран телефона ---------- */
-.ticket-wrap { position: relative; width: 100%; flex: 1 1 auto; min-height: 0; max-height: 660px; display: flex; }
+.ticket-wrap { position: relative; width: 100%; min-width: 0; flex: 1 1 auto; min-height: 0; max-height: 660px; display: flex; }
+.ticket, .t-body, .t-task { min-width: 0; }
 .ticket {
   --hole: 11px;
   --pad: 20px;
@@ -101,7 +102,7 @@ button { cursor: pointer; touch-action: manipulation; }
 }
 .t-head { padding: 18px var(--pad) 14px; display: grid; gap: 10px; }
 .t-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.t-brand { font-family: var(--serif); font-weight: 900; font-size: 19px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-brand { font-family: var(--display); font-weight: 600; font-size: 15px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .t-cat { font-weight: 700; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; }
 .stars { letter-spacing: .08em; font-size: 19px; line-height: 1; color: var(--red); white-space: nowrap; }
 .stars i { font-style: normal; color: var(--ink); opacity: .2; }
@@ -118,15 +119,15 @@ button { cursor: pointer; touch-action: manipulation; }
 .badge { flex: none; display: inline-flex; align-items: center; gap: 8px; background: var(--ink); color: var(--cream); border-radius: 999px; padding: 8px 15px 8px 11px; font-weight: 700; font-size: 14px; letter-spacing: .14em; text-transform: uppercase; }
 .badge svg { width: 22px; height: 22px; }
 .t-way p { margin: 0; font-size: 12.5px; line-height: 1.35; color: var(--ink-soft); }
-.t-task { flex: 1; display: flex; align-items: center; font-family: var(--serif); font-weight: 900; font-size: clamp(34px, 11vw, 58px); line-height: 1.04; text-wrap: balance; overflow-wrap: anywhere; }
-.t-task.long { font-size: clamp(28px, 8.6vw, 44px); }
-.t-task.xlong { font-size: clamp(24px, 7vw, 36px); }
-.t-hint { font-family: var(--serif); font-style: italic; font-size: 18px; line-height: 1.3; color: var(--ink-soft); font-variant-numeric: lining-nums; }
+.t-task { flex: 1; display: flex; align-items: center; font-family: var(--display); font-weight: 600; font-size: clamp(26px, 8.4vw, 46px); line-height: 1.12; text-wrap: balance; overflow-wrap: normal; min-height: 0; overflow: hidden; }
+.t-task.long { font-size: clamp(21px, 6.4vw, 34px); }
+.t-task.xlong { font-size: clamp(18px, 5.4vw, 28px); }
+.t-hint { font-family: var(--sans); font-style: italic; font-weight: 500; font-size: 16px; line-height: 1.35; color: var(--ink-soft); }
 .t-hint.off { font-family: var(--sans); font-style: normal; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; opacity: .7; }
 
 /* Рубашка */
 .ticket.back { cursor: pointer; }
-.t-q { font-family: var(--serif); font-weight: 900; font-size: 22px; line-height: 1; }
+.t-q { font-family: var(--display); font-weight: 600; font-size: 18px; line-height: 1; }
 .back-panel {
   flex: 1; min-height: 0; border-radius: 7px; color: var(--cream); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; padding: 18px;
   background: radial-gradient(circle at 50% 50%, transparent 0 30%, var(--night) 72%),
@@ -134,7 +135,7 @@ button { cursor: pointer; touch-action: manipulation; }
               var(--night);
 }
 .back-panel small { font-weight: 600; font-size: 11px; letter-spacing: .3em; color: var(--muted); }
-.back-name { font-family: var(--serif); font-weight: 900; font-size: clamp(40px, 13vw, 60px); line-height: 1; }
+.back-name { font-family: var(--display); font-weight: 600; font-size: clamp(28px, 9vw, 46px); line-height: 1; }
 .back-panel .badge { margin-top: 10px; background: var(--cream); color: var(--ink); }
 .back-cta { margin-top: 12px; font-weight: 700; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-2); border: 1px solid rgba(242, 234, 219, .35); border-radius: 999px; padding: 9px 15px; }
 .ticket.back .t-body { padding: 12px; }
@@ -165,22 +166,22 @@ button { cursor: pointer; touch-action: manipulation; }
 /* Экран между ходами */
 .turn { text-align: center; display: grid; gap: 6px; }
 .eyebrow { font-weight: 700; font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
-.turn h2 { margin: 0; font-family: var(--serif); font-weight: 900; font-size: clamp(30px, 9vw, 44px); line-height: 1.05; text-wrap: balance; overflow-wrap: anywhere; }
+.turn h2 { margin: 0; font-family: var(--display); font-weight: 600; font-size: clamp(22px, 6.8vw, 34px); line-height: 1.15; text-wrap: balance; overflow-wrap: anywhere; }
 .result { font-size: 14px; color: var(--cream-2); }
 .result.good b { color: var(--cream); }
 
 /* Пустая колода, победитель */
 .panel { text-align: center; display: grid; gap: 10px; justify-items: center; }
-.panel h2 { margin: 0; font-family: var(--serif); font-weight: 900; font-size: clamp(32px, 10vw, 46px); line-height: 1.05; }
+.panel h2 { margin: 0; font-family: var(--display); font-weight: 600; font-size: clamp(24px, 7.4vw, 36px); line-height: 1.05; }
 .panel p { margin: 0; color: var(--muted); max-width: 32ch; line-height: 1.5; }
 .win-list { width: 100%; display: grid; gap: 2px; margin-top: 6px; font-size: 14px; }
 .win-list div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px dashed rgba(59, 55, 50, .25); }
 .win-list div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.win-list b { font-family: var(--serif); font-weight: 900; font-variant-numeric: lining-nums tabular-nums; }
+.win-list b { font-family: var(--display); font-weight: 600; font-variant-numeric: lining-nums tabular-nums; }
 
 /* ---------- Настройки ---------- */
 .setup { display: grid; gap: 22px; padding-block: 8px 20px; }
-.hero h1 { margin: 6px 0 4px; font-family: var(--serif); font-weight: 900; font-size: clamp(38px, 12vw, 58px); line-height: .98; letter-spacing: -.01em; }
+.hero h1 { margin: 6px 0 4px; font-family: var(--display); font-weight: 600; font-size: clamp(32px, 10vw, 50px); line-height: 1.05; letter-spacing: -.01em; }
 .hero p { margin: 0; color: var(--muted); line-height: 1.5; max-width: 36ch; }
 .group { display: grid; gap: 10px; }
 .group > label, .group > .label { font-weight: 700; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
@@ -202,18 +203,18 @@ button { cursor: pointer; touch-action: manipulation; }
 .sheet { width: 100%; max-width: 520px; background: var(--night-2); border: 1px solid var(--line); border-radius: 20px 20px 0 0; padding: 18px 16px max(18px, env(safe-area-inset-bottom, 0px)); display: grid; gap: 8px; }
 .sheet .btn { width: 100%; text-align: left; border-color: var(--line); font-weight: 600; }
 .sheet .btn.warn { border-color: var(--cream); }
-.sheet h3 { margin: 0 0 4px; font-family: var(--serif); font-weight: 900; font-size: 22px; }
+.sheet h3 { margin: 0 0 4px; font-family: var(--display); font-weight: 600; font-size: 18px; }
 .reveal { position: fixed; inset: 0; z-index: 30; background: var(--night); display: flex; flex-direction: column; justify-content: center; gap: 16px; padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
 .reveal .ticket-wrap { max-width: 760px; margin: 0 auto; max-height: none; }
-.reveal .t-task { font-size: clamp(38px, 12vw, 80px); }
-.reveal .t-task.long { font-size: clamp(30px, 9vw, 62px); }
-.reveal .t-task.xlong { font-size: clamp(26px, 7.4vw, 50px); }
+.reveal .t-task { font-size: clamp(28px, 9vw, 64px); }
+.reveal .t-task.long { font-size: clamp(23px, 7vw, 48px); }
+.reveal .t-task.xlong { font-size: clamp(20px, 5.8vw, 38px); }
 .reveal .t-hint { font-size: clamp(18px, 4vw, 24px); }
 .reveal .btn { max-width: 760px; width: 100%; margin: 0 auto; }
 .sr { position: absolute; top: 0; left: 0; margin: 0; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 @media (min-width: 700px) {
-  .clock { font-size: 60px; }
+  .clock { font-size: 52px; }
 }
 /* Телефон боком: билет слева, кнопки столбиком справа. */
 @media (max-height: 560px) and (orientation: landscape) {
@@ -228,17 +229,17 @@ button { cursor: pointer; touch-action: manipulation; }
   .deck-btn { max-height: none; }
   .t-head { padding-block: 10px 8px; gap: 4px; }
   .t-body { padding-block: 10px 12px; gap: 6px; }
-  .t-task { font-size: clamp(22px, 9vh, 40px); }
-  .t-task.long { font-size: clamp(20px, 7.4vh, 32px); }
-  .t-task.xlong { font-size: clamp(18px, 6.2vh, 28px); }
+  .t-task { font-size: clamp(20px, 7.4vh, 34px); }
+  .t-task.long { font-size: clamp(18px, 6vh, 28px); }
+  .t-task.xlong { font-size: clamp(16px, 5vh, 24px); }
   .t-hint { font-size: 15px; }
-  .back-name { font-size: clamp(30px, 10vh, 48px); }
+  .back-name { font-size: clamp(24px, 8vh, 38px); }
   .back-cta { margin-top: 4px; }
-  .turn h2 { font-size: 26px; }
+  .turn h2 { font-size: 20px; }
   .btn { min-height: 50px; }
   .btn.big { min-height: 56px; font-size: 16px; }
-  .clock { font-size: 38px; }
-  .reveal .t-task { font-size: clamp(26px, 12vh, 56px); }
+  .clock { font-size: 32px; }
+  .reveal .t-task { font-size: clamp(22px, 9vh, 44px); }
 }
 </style>
 
@@ -634,6 +635,26 @@ function render() {
   if (view.screen === 'setup') renderSetup(); else renderGame();
   renderLayer();
 }
+
+// Широкий шрифт: уменьшаем задание, пока самое длинное слово и весь текст не влезут в билет.
+function fitText() {
+  document.querySelectorAll('.t-task').forEach((el) => {
+    el.style.fontSize = '';
+    el.style.overflowWrap = '';
+    let size = parseFloat(getComputedStyle(el).fontSize);
+    while (size > 15 && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1)) {
+      size -= 1;
+      el.style.fontSize = size + 'px';
+    }
+    // Слово длиннее строки даже на минимальном размере — тогда уж переносим внутри слова.
+    if (el.scrollWidth > el.clientWidth + 1) el.style.overflowWrap = 'anywhere';
+  });
+}
+let fitQueued = 0;
+function queueFit() { cancelAnimationFrame(fitQueued); fitQueued = requestAnimationFrame(fitText); }
+new MutationObserver(queueFit).observe(document.body, { childList: true, subtree: true });
+window.addEventListener('resize', queueFit);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(queueFit);
 
 // ---------- Ходы ----------
 function goGame() {
