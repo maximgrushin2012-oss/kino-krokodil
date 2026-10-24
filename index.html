@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}</style>
+</head><body>
+<title>Кино-крокодил Киношной</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#0d0c0b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700&display=swap">
+<style>
+/* Одна сцена: шапка с таймером, билет по центру, кнопки — под большим пальцем. */
+:root {
+  --night: #0d0c0b;      /* фон клуба */
+  --night-2: #1a1815;    /* плашки на черном */
+  --night-3: #2a2621;
+  --cream: #f2eadb;      /* билет */
+  --cream-2: #e4d9c4;
+  --muted: #a3998a;      /* мелкий текст на черном */
+  --ink: #3b3732;        /* текст на билете */
+  --ink-soft: #7b7266;
+  --red: #d7261e;        /* только точка «Киношная.» и звезды (и последние 10 секунд) */
+  --line: rgba(242, 234, 219, 0.16);
+  --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --sans: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--night);
+  color: var(--cream);
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 15px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--cream); outline-offset: 3px; }
+
+#app { min-height: 100%; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; }
+#app.play { height: 100%; }
+
+/* ---------- Шапка ---------- */
+.bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding-block: 10px 6px; gap: 8px; }
+.brand { font-family: var(--serif); font-weight: 700; font-size: 18px; line-height: 1; white-space: nowrap; }
+.brand small { display: block; font-family: var(--sans); font-weight: 600; font-size: 9px; letter-spacing: .24em; color: var(--muted); margin-bottom: 3px; }
+.dot { color: var(--red); }
+.tools { display: flex; justify-content: flex-end; gap: 6px; }
+.icon-btn { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: transparent; display: grid; place-items: center; }
+.icon-btn svg { width: 20px; height: 20px; }
+.clock { font-family: var(--serif); font-weight: 900; font-size: 52px; line-height: 1; font-variant-numeric: tabular-nums lining-nums; min-width: 2.2ch; text-align: center; transition: color .2s; }
+.clock.idle { color: var(--night-3); }
+.clock.hurry { color: var(--red); animation: pulse 1s steps(1) infinite; }
+.clock.off { font-size: 15px; font-family: var(--sans); font-weight: 600; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+@keyframes pulse { 50% { opacity: .55; } }
+
+/* ---------- Счет команд ---------- */
+.score { display: flex; gap: 6px; overflow-x: auto; padding-block: 4px 2px; scrollbar-width: none; }
+.score::-webkit-scrollbar { display: none; }
+.team { flex: 0 0 auto; display: flex; align-items: baseline; gap: 8px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); font-size: 13px; color: var(--muted); max-width: 70vw; }
+.team b { font-family: var(--serif); font-weight: 900; font-size: 17px; color: var(--cream); font-variant-numeric: lining-nums tabular-nums; }
+.team span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team.now { background: var(--cream); color: var(--ink); border-color: var(--cream); }
+.team.now b { color: var(--ink); }
+.round { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); padding: 10px 2px 0; }
+
+/* ---------- Сцена ---------- */
+.stage { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: stretch; gap: 14px; padding-block: 10px; min-height: 0; }
+.actions { display: grid; gap: 10px; padding-block: 8px max(14px, env(safe-area-inset-bottom, 0px)); }
+.actions .row, .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn { min-height: 58px; border-radius: 14px; border: 1.5px solid var(--cream); background: transparent; font-weight: 700; font-size: 16px; letter-spacing: .02em; padding: 10px 16px; }
+.btn.main { background: var(--cream); color: var(--ink); }
+.btn.big { min-height: 66px; font-size: 18px; }
+.btn:disabled { opacity: .35; cursor: default; }
+.btn:not(:disabled):active { transform: translateY(1px); }
+.link { background: none; border: 0; color: var(--muted); font-size: 14px; padding: 8px; text-decoration: underline; text-underline-offset: 3px; }
+.note { text-align: center; color: var(--muted); font-size: 13px; }
+
+/* ---------- Билет: вертикальная карточка во весь экран телефона ---------- */
+.ticket-wrap { position: relative; width: 100%; flex: 1 1 auto; min-height: 0; max-height: 660px; display: flex; }
+.ticket {
+  --hole: 11px;
+  --pad: 20px;
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 340px;
+  background-color: var(--cream);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .23 0 0 0 0 .2 0 0 0 0 .17 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  color: var(--ink);
+  border-radius: 12px;
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .9);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.t-head { padding: 18px var(--pad) 14px; display: grid; gap: 10px; }
+.t-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.t-brand { font-family: var(--serif); font-weight: 900; font-size: 19px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-cat { font-weight: 700; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; }
+.stars { letter-spacing: .08em; font-size: 19px; line-height: 1; color: var(--red); white-space: nowrap; }
+.stars i { font-style: normal; color: var(--ink); opacity: .2; }
+/* Перфорация с вырубками по краям — кружки цвета фона. */
+.t-perf { position: relative; margin-inline: 16px; border-top: 2px dotted rgba(59, 55, 50, .38); }
+.t-perf::before, .t-perf::after {
+  content: ''; position: absolute; top: calc(var(--hole) * -1 - 1px); width: calc(var(--hole) * 2); height: calc(var(--hole) * 2);
+  border-radius: 50%; background: var(--night);
+}
+.t-perf::before { left: calc(-16px - var(--hole)); }
+.t-perf::after { right: calc(-16px - var(--hole)); }
+.t-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding: 18px var(--pad) 22px; }
+.t-way { display: flex; align-items: center; gap: 12px; }
+.badge { flex: none; display: inline-flex; align-items: center; gap: 8px; background: var(--ink); color: var(--cream); border-radius: 999px; padding: 8px 15px 8px 11px; font-weight: 700; font-size: 14px; letter-spacing: .14em; text-transform: uppercase; }
+.badge svg { width: 22px; height: 22px; }
+.t-way p { margin: 0; font-size: 12.5px; line-height: 1.35; color: var(--ink-soft); }
+.t-task { flex: 1; display: flex; align-items: center; font-family: var(--serif); font-weight: 900; font-size: clamp(34px, 11vw, 58px); line-height: 1.04; text-wrap: balance; overflow-wrap: anywhere; }
+.t-task.long { font-size: clamp(28px, 8.6vw, 44px); }
+.t-task.xlong { font-size: clamp(24px, 7vw, 36px); }
+.t-hint { font-family: var(--serif); font-style: italic; font-size: 18px; line-height: 1.3; color: var(--ink-soft); font-variant-numeric: lining-nums; }
+.t-hint.off { font-family: var(--sans); font-style: normal; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; opacity: .7; }
+
+/* Рубашка */
+.ticket.back { cursor: pointer; }
+.t-q { font-family: var(--serif); font-weight: 900; font-size: 22px; line-height: 1; }
+.back-panel {
+  flex: 1; min-height: 0; border-radius: 7px; color: var(--cream); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; padding: 18px;
+  background: radial-gradient(circle at 50% 50%, transparent 0 30%, var(--night) 72%),
+              repeating-radial-gradient(circle at 50% 50%, rgba(242, 234, 219, .09) 0 1px, transparent 1px 7px),
+              var(--night);
+}
+.back-panel small { font-weight: 600; font-size: 11px; letter-spacing: .3em; color: var(--muted); }
+.back-name { font-family: var(--serif); font-weight: 900; font-size: clamp(40px, 13vw, 60px); line-height: 1; }
+.back-panel .badge { margin-top: 10px; background: var(--cream); color: var(--ink); }
+.back-cta { margin-top: 12px; font-weight: 700; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-2); border: 1px solid rgba(242, 234, 219, .35); border-radius: 999px; padding: 9px 15px; }
+.ticket.back .t-body { padding: 12px; }
+
+/* Колода на экране «Вытянуть билет» */
+.deck-btn { flex: 1 1 auto; min-height: 0; max-height: 470px; display: flex; width: 100%; background: none; border: 0; padding: 0; text-align: inherit; }
+.deck { position: relative; flex: 1; display: flex; padding-top: 12px; }
+.deck .layer { position: absolute; inset: 12px 0 0; border-radius: 12px; background: var(--cream-2); box-shadow: 0 10px 30px -12px rgba(0, 0, 0, .8); }
+.deck .layer.a { transform: rotate(-2.6deg) translateY(-8px); opacity: .5; }
+.deck .layer.b { transform: rotate(2deg) translateY(-4px); opacity: .78; }
+.deck .ticket { pointer-events: none; min-height: 260px; }
+
+/* Анимации */
+.anim-draw { animation: draw .5s cubic-bezier(.2, .8, .25, 1) both; }
+@keyframes draw { from { transform: translateY(70%) rotate(-5deg); opacity: 0; } 60% { opacity: 1; } to { transform: none; opacity: 1; } }
+.anim-flip-out { animation: flipout .17s ease-in forwards; }
+@keyframes flipout { to { transform: perspective(900px) rotateY(90deg); } }
+.anim-flip-in { animation: flipin .24s ease-out both; }
+@keyframes flipin { from { transform: perspective(900px) rotateY(-90deg); } to { transform: none; } }
+.anim-fade { animation: fade .35s ease both; }
+@keyframes fade { from { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) {
+  .anim-draw, .anim-flip-in, .anim-fade { animation: none; }
+  .anim-flip-out { animation-duration: 1ms; }
+  .clock.hurry { animation: none; }
+}
+
+/* Экран между ходами */
+.turn { text-align: center; display: grid; gap: 6px; }
+.eyebrow { font-weight: 700; font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+.turn h2 { margin: 0; font-family: var(--serif); font-weight: 900; font-size: clamp(30px, 9vw, 44px); line-height: 1.05; text-wrap: balance; overflow-wrap: anywhere; }
+.result { font-size: 14px; color: var(--cream-2); }
+.result.good b { color: var(--cream); }
+
+/* Пустая колода, победитель */
+.panel { text-align: center; display: grid; gap: 10px; justify-items: center; }
+.panel h2 { margin: 0; font-family: var(--serif); font-weight: 900; font-size: clamp(32px, 10vw, 46px); line-height: 1.05; }
+.panel p { margin: 0; color: var(--muted); max-width: 32ch; line-height: 1.5; }
+.win-list { width: 100%; display: grid; gap: 2px; margin-top: 6px; font-size: 14px; }
+.win-list div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px dashed rgba(59, 55, 50, .25); }
+.win-list div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.win-list b { font-family: var(--serif); font-weight: 900; font-variant-numeric: lining-nums tabular-nums; }
+
+/* ---------- Настройки ---------- */
+.setup { display: grid; gap: 22px; padding-block: 8px 20px; }
+.hero h1 { margin: 6px 0 4px; font-family: var(--serif); font-weight: 900; font-size: clamp(38px, 12vw, 58px); line-height: .98; letter-spacing: -.01em; }
+.hero p { margin: 0; color: var(--muted); line-height: 1.5; max-width: 36ch; }
+.group { display: grid; gap: 10px; }
+.group > label, .group > .label { font-weight: 700; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { min-height: 44px; padding: 9px 15px; border-radius: 999px; border: 1px solid var(--line); background: var(--night-2); font-size: 14px; font-weight: 600; }
+.chip[aria-pressed="true"] { background: var(--cream); color: var(--ink); border-color: var(--cream); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; gap: 4px; border-radius: 16px; background: var(--night-2); border: 1px solid var(--line); }
+.seg .chip { border: 0; border-radius: 12px; background: transparent; min-height: 52px; display: grid; gap: 2px; align-content: center; }
+.seg .chip small { font-weight: 500; font-size: 11.5px; opacity: .72; }
+.seg .chip[aria-pressed="true"] { background: var(--cream); color: var(--ink); }
+.teams-edit { display: grid; gap: 8px; }
+.team-row { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 8px; }
+.team-row input { min-height: 46px; border-radius: 12px; border: 1px solid var(--line); background: var(--night-2); padding: 0 14px; min-width: 0; }
+.team-row input:focus { outline: none; border-color: var(--cream); }
+.start { position: sticky; bottom: 0; display: grid; gap: 8px; padding-block: 10px max(14px, env(safe-area-inset-bottom, 0px)); background: var(--night); box-shadow: 0 -16px 16px var(--night); }
+
+/* ---------- Меню и показ всем ---------- */
+.sheet-bg { position: fixed; inset: 0; z-index: 20; background: rgba(5, 5, 4, .72); display: flex; align-items: flex-end; justify-content: center; padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
+.sheet { width: 100%; max-width: 520px; background: var(--night-2); border: 1px solid var(--line); border-radius: 20px 20px 0 0; padding: 18px 16px max(18px, env(safe-area-inset-bottom, 0px)); display: grid; gap: 8px; }
+.sheet .btn { width: 100%; text-align: left; border-color: var(--line); font-weight: 600; }
+.sheet .btn.warn { border-color: var(--cream); }
+.sheet h3 { margin: 0 0 4px; font-family: var(--serif); font-weight: 900; font-size: 22px; }
+.reveal { position: fixed; inset: 0; z-index: 30; background: var(--night); display: flex; flex-direction: column; justify-content: center; gap: 16px; padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.reveal .ticket-wrap { max-width: 760px; margin: 0 auto; max-height: none; }
+.reveal .t-task { font-size: clamp(38px, 12vw, 80px); }
+.reveal .t-task.long { font-size: clamp(30px, 9vw, 62px); }
+.reveal .t-task.xlong { font-size: clamp(26px, 7.4vw, 50px); }
+.reveal .t-hint { font-size: clamp(18px, 4vw, 24px); }
+.reveal .btn { max-width: 760px; width: 100%; margin: 0 auto; }
+.sr { position: absolute; top: 0; left: 0; margin: 0; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (min-width: 700px) {
+  .clock { font-size: 60px; }
+}
+/* Телефон боком: билет слева, кнопки столбиком справа. */
+@media (max-height: 560px) and (orientation: landscape) {
+  #app.play { max-width: 960px; display: grid; grid-template-columns: minmax(0, 1fr) 210px; grid-template-rows: auto auto auto minmax(0, 1fr); column-gap: 16px; }
+  #app.play .bar { grid-column: 1 / -1; padding-block: 4px 0; }
+  #app.play .round, #app.play .score { grid-column: 1 / -1; }
+  #app.play .round { padding-top: 2px; }
+  #app.play .stage { grid-column: 1; grid-row: 4; padding-block: 6px max(10px, env(safe-area-inset-bottom, 0px)); gap: 8px; }
+  #app.play .actions { grid-column: 2; grid-row: 4; align-content: center; padding-block: 6px max(10px, env(safe-area-inset-bottom, 0px)); }
+  .actions .row { grid-template-columns: 1fr; }
+  .ticket, .deck .ticket { min-height: 0; }
+  .deck-btn { max-height: none; }
+  .t-head { padding-block: 10px 8px; gap: 4px; }
+  .t-body { padding-block: 10px 12px; gap: 6px; }
+  .t-task { font-size: clamp(22px, 9vh, 40px); }
+  .t-task.long { font-size: clamp(20px, 7.4vh, 32px); }
+  .t-task.xlong { font-size: clamp(18px, 6.2vh, 28px); }
+  .t-hint { font-size: 15px; }
+  .back-name { font-size: clamp(30px, 10vh, 48px); }
+  .back-cta { margin-top: 4px; }
+  .turn h2 { font-size: 26px; }
+  .btn { min-height: 50px; }
+  .btn.big { min-height: 56px; font-size: 16px; }
+  .clock { font-size: 38px; }
+  .reveal .t-task { font-size: clamp(26px, 12vh, 56px); }
+}
+</style>
+
+<div id="app"></div>
+<div id="layer"></div>
+<p class="sr" aria-live="polite" id="live"></p>
+
+<script>
+'use strict';
+// [id, категория, задание, подсказка, сложность 1–3, 1 = наше, 1 = «свои»] — встраивает krokodil/sobrat.mjs
+const DATA = [["film-001",0,"«Титаник»","Джеймс Кэмерон, 1997",1,0,0],["film-002",0,"«Терминатор»","Джеймс Кэмерон, 1984",1,0,0],["film-003",0,"«Аватар»","Джеймс Кэмерон, 2009",1,0,0],["film-004",0,"«Король Лев»","мультфильм Disney, 1994",1,0,0],["film-005",0,"«Гарри Поттер и философский камень»","Крис Коламбус, 2001",1,0,0],["film-006",0,"«Властелин колец: Братство кольца»","Питер Джексон, 2001",1,0,0],["film-007",0,"«Звездные войны»","Джордж Лукас, 1977",1,0,0],["film-008",0,"«Матрица»","Лана и Лилли Вачовски, 1999",1,0,0],["film-009",0,"«Пираты Карибского моря: Проклятие Черной жемчужины»","Гор Вербински, 2003",1,0,0],["film-010",0,"«Шрек»","мультфильм DreamWorks, 2001",1,0,0],["film-011",0,"«Один дома»","Крис Коламбус, 1990",1,0,0],["film-012",0,"«Парк Юрского периода»","Стивен Спилберг, 1993",1,0,0],["film-013",0,"«Назад в будущее»","Роберт Земекис, 1985",1,0,0],["film-014",0,"«Форрест Гамп»","Роберт Земекис, 1994",1,0,0],["film-015",0,"«Челюсти»","Стивен Спилберг, 1975",1,0,0],["film-016",0,"«Человек-паук»","Сэм Рэйми, 2002",1,0,0],["film-017",0,"«Мстители»","Джосс Уидон, 2012",1,0,0],["film-018",0,"«Тачки»","мультфильм Pixar, 2006",1,0,0],["film-019",0,"«История игрушек»","мультфильм Pixar, 1995",1,0,0],["film-020",0,"«В поисках Немо»","мультфильм Pixar, 2003",1,0,0],["film-021",0,"«Холодное сердце»","мультфильм Disney, 2013",1,0,0],["film-022",0,"«Русалочка»","мультфильм Disney, 1989",1,0,0],["film-023",0,"«Красавица и чудовище»","мультфильм Disney, 1991",1,0,0],["film-024",0,"«Аладдин»","мультфильм Disney, 1992",1,0,0],["film-025",0,"«Мадагаскар»","мультфильм DreamWorks, 2005",1,0,0],["film-026",0,"«Ледниковый период»","мультфильм Blue Sky, 2002",1,0,0],["film-027",0,"«Кинг-Конг»","Питер Джексон, 2005",1,0,0],["film-028",0,"«Маска»","Чак Рассел, 1994",1,0,0],["film-029",0,"«Рокки»","Джон Эвилдсен, 1976",1,0,0],["film-030",0,"«Чарли и шоколадная фабрика»","Тим Бертон, 2005",1,0,0],["film-031",0,"«Темный рыцарь»","Кристофер Нолан, 2008",1,0,0],["film-032",0,"«Охотники за привидениями»","Айван Райтман, 1984",1,0,0],["film-033",0,"«Люди в черном»","Барри Зонненфельд, 1997",1,0,0],["film-034",0,"«Пятый элемент»","Люк Бессон, 1997",1,0,0],["film-035",0,"«Чужой»","Ридли Скотт, 1979",1,0,0],["film-036",0,"«Хатико: Самый верный друг»","Лассе Халльстрем, 2009",1,0,0],["film-037",0,"«Гадкий я»","мультфильм Illumination, 2010",1,0,0],["film-038",0,"«Кунг-фу Панда»","мультфильм DreamWorks, 2008",1,0,0],["film-039",0,"«Зверополис»","мультфильм Disney, 2016",1,0,0],["film-040",0,"«Головоломка»","мультфильм Pixar, 2015",1,0,0],["film-041",0,"«ВАЛЛ·И»","мультфильм Pixar, 2008",1,0,0],["film-042",0,"«Рататуй»","мультфильм Pixar, 2007",1,0,0],["film-043",0,"«Корпорация монстров»","мультфильм Pixar, 2001",1,0,0],["film-044",0,"«Вверх»","мультфильм Pixar, 2009",1,0,0],["film-045",0,"«Белоснежка и семь гномов»","мультфильм Disney, 1937",1,0,0],["film-046",0,"«Золушка»","мультфильм Disney, 1950",1,0,0],["film-047",0,"«Книга джунглей»","мультфильм Disney, 1967",1,0,0],["film-048",0,"«Бэмби»","мультфильм Disney, 1942",1,0,0],["film-049",0,"«101 далматинец»","мультфильм Disney, 1961",1,0,0],["film-050",0,"«Годзилла»","Исиро Хонда, 1954",1,0,0],["film-051",0,"«Трансформеры»","Майкл Бэй, 2007",1,0,0],["film-052",0,"«Мумия»","Стивен Соммерс, 1999",1,0,0],["film-053",0,"«Хоббит: Нежданное путешествие»","Питер Джексон, 2012",1,0,0],["film-054",0,"«Индиана Джонс: В поисках утраченного ковчега»","Стивен Спилберг, 1981",1,0,0],["film-055",0,"«Инопланетянин»","Стивен Спилберг, 1982",1,0,0],["film-056",0,"«Форсаж»","Роб Коэн, 2001",1,0,0],["film-057",0,"«Крепкий орешек»","Джон Мактирнан, 1988",1,0,0],["film-058",0,"«Пила»","Джеймс Ван, 2004",1,0,0],["film-059",0,"«Оно»","Андрес Мускетти, 2017",1,0,0],["film-060",0,"«Звонок»","Гор Вербински, 2002",1,0,0],["film-061",0,"«Крик»","Уэс Крэйвен, 1996",1,0,0],["film-062",0,"«Красотка»","Гарри Маршалл, 1990",1,0,0],["film-063",0,"«Гринч — похититель Рождества»","Рон Ховард, 2000",1,0,0],["film-064",0,"«Джуманджи»","Джо Джонстон, 1995",1,0,0],["film-065",0,"«Шерлок Холмс»","Гай Ричи, 2009",1,0,0],["film-066",0,"«Голодные игры»","Гэри Росс, 2012",1,0,0],["film-067",0,"«Сумерки»","Кэтрин Хардвик, 2008",1,0,0],["film-068",0,"«Мэри Поппинс»","Роберт Стивенсон, 1964",1,0,0],["film-069",0,"«Супермен»","Ричард Доннер, 1978",1,0,0],["film-070",0,"«Бэтмен»","Тим Бертон, 1989",1,0,0],["film-071",0,"«Железный человек»","Джон Фавро, 2008",1,0,0],["film-072",0,"«Дэдпул»","Тим Миллер, 2016",1,0,0],["film-073",0,"«Джокер»","Тодд Филлипс, 2019",1,0,0],["film-074",0,"«Интерстеллар»","Кристофер Нолан, 2014",1,0,0],["film-075",0,"«Начало»","Кристофер Нолан, 2010",1,0,0],["film-076",0,"«Гладиатор»","Ридли Скотт, 2000",1,0,0],["film-077",0,"«Троя»","Вольфганг Петерсен, 2004",1,0,0],["film-078",0,"«300 спартанцев»","Зак Снайдер, 2006",1,0,0],["film-079",0,"«Зеленая миля»","Фрэнк Дарабонт, 1999",1,0,0],["film-080",0,"«Побег из Шоушенка»","Фрэнк Дарабонт, 1994",1,0,0],["film-081",0,"«Крестный отец»","Фрэнсис Форд Коппола, 1972",1,0,0],["film-082",0,"«Леон»","Люк Бессон, 1994",1,0,0],["film-083",0,"«1+1»","Оливье Накаш и Эрик Толедано, 2011",1,0,0],["film-084",0,"«Мальчишник в Вегасе»","Тодд Филлипс, 2009",1,0,0],["film-085",0,"«Волк с Уолл-стрит»","Мартин Скорсезе, 2013",1,0,0],["film-086",0,"«Хищник»","Джон Мактирнан, 1987",1,0,0],["film-087",0,"«Джон Уик»","Чад Стахелски, 2014",1,0,0],["film-088",0,"«Миссия невыполнима»","Брайан Де Пальма, 1996",1,0,0],["film-089",0,"«Тупой и еще тупее»","Питер Фаррелли, 1994",1,0,0],["film-090",0,"«Эйс Вентура: Розыск домашних животных»","Том Шедьяк, 1994",1,0,0],["film-091",0,"«Брюс Всемогущий»","Том Шедьяк, 2003",1,0,0],["film-092",0,"«Барби»","Грета Гервиг, 2023",1,0,0],["film-093",0,"«Семейка Аддамс»","Барри Зонненфельд, 1991",1,0,0],["film-094",0,"«Как приручить дракона»","мультфильм DreamWorks, 2010",1,0,0],["film-095",0,"«Лило и Стич»","мультфильм Disney, 2002",1,0,0],["film-096",0,"«Рапунцель: Запутанная история»","мультфильм Disney, 2010",1,0,0],["film-097",0,"«Мулан»","мультфильм Disney, 1998",1,0,0],["film-098",0,"«Тарзан»","мультфильм Disney, 1999",1,0,0],["film-099",0,"«Алиса в Стране чудес»","Тим Бертон, 2010",1,0,0],["film-100",0,"«Ночь в музее»","Шон Леви, 2006",1,0,0],["film-101",0,"«Спасти рядового Райана»","Стивен Спилберг, 1998",2,0,0],["film-102",0,"«Кошмар на улице Вязов»","Уэс Крэйвен, 1984",2,0,0],["film-103",0,"«Изгоняющий дьявола»","Уильям Фридкин, 1973",2,0,0],["film-104",0,"«Сияние»","Стэнли Кубрик, 1980",2,0,0],["film-105",0,"«Психо»","Альфред Хичкок, 1960",2,0,0],["film-106",0,"«Молчание ягнят»","Джонатан Демми, 1991",2,0,0],["film-107",0,"«Криминальное чтиво»","Квентин Тарантино, 1994",2,0,0],["film-108",0,"«Бойцовский клуб»","Дэвид Финчер, 1999",2,0,1],["film-109",0,"«Социальная сеть»","Дэвид Финчер, 2010",2,0,1],["film-110",0,"«Загадочная история Бенджамина Баттона»","Дэвид Финчер, 2008",2,0,1],["film-111",0,"«Зеленая книга»","Питер Фаррелли, 2018",2,0,0],["film-112",0,"«Амели»","Жан-Пьер Жене, 2001",2,0,0],["film-113",0,"«Пианист»","Роман Полански, 2002",2,0,0],["film-114",0,"«Список Шиндлера»","Стивен Спилберг, 1993",2,0,0],["film-115",0,"«Американский пирог»","Пол Вайц, 1999",2,0,0],["film-116",0,"«Остров проклятых»","Мартин Скорсезе, 2010",2,0,0],["film-117",0,"«Отступники»","Мартин Скорсезе, 2006",2,0,0],["film-118",0,"«Убить Билла»","Квентин Тарантино, 2003",2,0,0],["film-119",0,"«Бесславные ублюдки»","Квентин Тарантино, 2009",2,0,0],["film-120",0,"«Джанго освобожденный»","Квентин Тарантино, 2012",2,0,0],["film-121",0,"«Однажды в… Голливуде»","Квентин Тарантино, 2019",2,0,0],["film-122",0,"«Карты, деньги, два ствола»","Гай Ричи, 1998",2,0,0],["film-123",0,"«Большой куш»","Гай Ричи, 2000",2,0,0],["film-124",0,"«Пролетая над гнездом кукушки»","Милош Форман, 1975",2,0,0],["film-125",0,"«В джазе только девушки»","Билли Уайлдер, 1959",2,0,0],["film-126",0,"«Римские каникулы»","Уильям Уайлер, 1953",2,0,0],["film-127",0,"«Завтрак у Тиффани»","Блейк Эдвардс, 1961",2,0,0],["film-128",0,"«Унесенные ветром»","Виктор Флеминг, 1939",2,0,0],["film-129",0,"«Волшебник страны Оз»","Виктор Флеминг, 1939",2,0,0],["film-130",0,"«Дьявол носит Prada»","Дэвид Фрэнкел, 2006",2,0,0],["film-131",0,"«Робокоп»","Пол Верховен, 1987",2,0,0],["film-132",0,"«Основной инстинкт»","Пол Верховен, 1992",2,0,0],["film-133",0,"«Призрак»","Джерри Цукер, 1990",2,0,0],["film-134",0,"«Грязные танцы»","Эмиль Ардолино, 1987",2,0,0],["film-135",0,"«Ла-Ла Ленд»","Дэмьен Шазелл, 2016",2,0,0],["film-136",0,"«Шоу Трумана»","Питер Уир, 1998",2,0,0],["film-137",0,"«Престиж»","Кристофер Нолан, 2006",2,0,0],["film-138",0,"«Оппенгеймер»","Кристофер Нолан, 2023",2,0,0],["film-139",0,"«Достать ножи»","Райан Джонсон, 2019",2,0,0],["film-140",0,"«Паразиты»","Пон Джун-хо, 2019",2,0,0],["film-141",0,"«Унесенные призраками»","Хаяо Миядзаки, 2001",2,0,0],["film-142",0,"«Мой сосед Тоторо»","Хаяо Миядзаки, 1988",2,0,0],["film-143",0,"«Ходячий замок»","Хаяо Миядзаки, 2004",2,0,0],["film-144",0,"«Безумный Макс: Дорога ярости»","Джордж Миллер, 2015",2,0,0],["film-145",0,"«Топ Ган»","Тони Скотт, 1986",2,0,0],["film-146",0,"«Лицо со шрамом»","Брайан Де Пальма, 1983",2,0,0],["film-147",0,"«Ford против Ferrari»","Джеймс Мэнголд, 2019",2,0,0],["film-148",0,"«Знакомство с родителями»","Джей Роуч, 2000",2,0,0],["film-149",0,"«Лжец, лжец»","Том Шедьяк, 1997",2,0,0],["film-150",0,"«Миссис Даутфайр»","Крис Коламбус, 1993",2,0,0],["film-151",0,"«Джентльмены»","Гай Ричи, 2019",2,0,0],["film-152",0,"«Дюна»","Дени Вильнев, 2021",2,0,0],["film-153",0,"«Хроники Нарнии: Лев, колдунья и волшебный шкаф»","Эндрю Адамсон, 2005",2,0,0],["film-154",0,"«Полицейская академия»","Хью Уилсон, 1984",2,0,0],["film-155",0,"«Пятница, 13-е»","Шон Каннингем, 1980",2,0,0],["film-156",0,"«Хэллоуин»","Джон Карпентер, 1978",2,0,0],["film-157",0,"«Заклятие»","Джеймс Ван, 2013",2,0,0],["film-158",0,"«Астрал»","Джеймс Ван, 2010",2,0,0],["film-159",0,"«Техасская резня бензопилой»","Тоуб Хупер, 1974",2,0,0],["film-160",0,"«Прочь»","Джордан Пил, 2017",2,0,0],["film-161",0,"«Тихое место»","Джон Красински, 2018",2,0,0],["film-162",0,"«Дракула»","Фрэнсис Форд Коппола, 1992",2,0,0],["film-163",0,"«Интервью с вампиром»","Нил Джордан, 1994",2,0,0],["film-164",0,"«Шестое чувство»","М. Найт Шьямалан, 1999",2,0,0],["film-165",0,"«Другие»","Алехандро Аменабар, 2001",2,0,0],["film-166",0,"«Пункт назначения»","Джеймс Вонг, 2000",2,0,0],["film-167",0,"«Битлджус»","Тим Бертон, 1988",2,0,0],["film-168",0,"«Эдвард Руки-ножницы»","Тим Бертон, 1990",2,0,0],["film-169",0,"«Кошмар перед Рождеством»","Генри Селик, 1993",2,0,0],["film-170",0,"«Труп невесты»","Тим Бертон, 2005",2,0,0],["film-171",0,"«Сонная Лощина»","Тим Бертон, 1999",2,0,0],["film-172",0,"«Гремлины»","Джо Данте, 1984",2,0,0],["film-173",0,"«Каспер»","Брэд Силберлинг, 1995",2,0,0],["film-174",0,"«Тайна Коко»","мультфильм Pixar, 2017",2,0,0],["film-175",0,"«Моана»","мультфильм Disney, 2016",2,0,0],["film-176",0,"«Покахонтас»","мультфильм Disney, 1995",2,0,0],["film-177",0,"«Геркулес»","мультфильм Disney, 1997",2,0,0],["film-178",0,"«Человек дождя»","Барри Левинсон, 1988",2,0,0],["film-179",0,"«Терминал»","Стивен Спилберг, 2004",2,0,0],["film-180",0,"«Поймай меня, если сможешь»","Стивен Спилберг, 2002",2,0,0],["film-181",0,"«Изгой»","Роберт Земекис, 2000",2,0,0],["film-182",0,"«Храброе сердце»","Мел Гибсон, 1995",2,0,0],["film-183",0,"«50 первых поцелуев»","Питер Сигал, 2004",2,0,0],["film-184",0,"«Достучаться до небес»","Томас Ян, 1997",2,0,0],["film-185",0,"«Марсианин»","Ридли Скотт, 2015",2,0,0],["film-186",0,"«Гравитация»","Альфонсо Куарон, 2013",2,0,0],["film-187",0,"«Жизнь Пи»","Энг Ли, 2012",2,0,0],["film-188",0,"«Семь»","Дэвид Финчер, 1995",3,0,1],["film-189",0,"«Зодиак»","Дэвид Финчер, 2007",3,0,1],["film-190",0,"«Исчезнувшая»","Дэвид Финчер, 2014",3,0,1],["film-191",0,"«Игра»","Дэвид Финчер, 1997",3,0,1],["film-192",0,"«Комната страха»","Дэвид Финчер, 2002",3,0,1],["film-193",0,"«Девушка с татуировкой дракона»","Дэвид Финчер, 2011",3,0,1],["film-194",0,"«Птицы»","Альфред Хичкок, 1963",3,0,0],["film-195",0,"«Таксист»","Мартин Скорсезе, 1976",3,0,0],["film-196",0,"«Славные парни»","Мартин Скорсезе, 1990",3,0,0],["film-197",0,"«Бешеные псы»","Квентин Тарантино, 1992",3,0,0],["film-198",0,"«Большой Лебовски»","Джоэл и Итан Коэны, 1998",3,0,0],["film-199",0,"«Старикам тут не место»","Джоэл и Итан Коэны, 2007",3,0,0],["film-200",0,"«Фарго»","Джоэл и Итан Коэны, 1996",3,0,0],["film-201",0,"«Заводной апельсин»","Стэнли Кубрик, 1971",3,0,0],["film-202",0,"«Космическая одиссея 2001 года»","Стэнли Кубрик, 1968",3,0,0],["film-203",0,"«Бегущий по лезвию»","Ридли Скотт, 1982",3,0,0],["film-204",0,"«Апокалипсис сегодня»","Фрэнсис Форд Коппола, 1979",3,0,0],["film-205",0,"«Касабланка»","Майкл Кертис, 1942",3,0,0],["film-206",0,"«Огни большого города»","Чарли Чаплин, 1931",3,0,0],["film-207",0,"«Новые времена»","Чарли Чаплин, 1936",3,0,0],["film-208",0,"«Гражданин Кейн»","Орсон Уэллс, 1941",3,0,0],["film-209",0,"«Хороший, плохой, злой»","Серджо Леоне, 1966",3,0,0],["film-210",0,"«Однажды на Диком Западе»","Серджо Леоне, 1968",3,0,0],["film-211",0,"«Вспомнить все»","Пол Верховен, 1990",3,0,0],["film-212",0,"«Одержимость»","Дэмьен Шазелл, 2014",3,0,0],["film-213",0,"«Жизнь прекрасна»","Роберто Бениньи, 1997",3,0,0],["film-214",0,"«Помни»","Кристофер Нолан, 2000",3,0,0],["film-215",0,"«Олдбой»","Пак Чхан-ук, 2003",3,0,0],["film-216",0,"«Принцесса Мононоке»","Хаяо Миядзаки, 1997",3,0,0],["film-217",0,"«Отель „Гранд Будапешт“»","Уэс Андерсон, 2014",3,0,0],["film-218",0,"«Маленькая мисс Счастье»","Джонатан Дэйтон и Валери Фэрис, 2006",3,0,0],["film-219",0,"«Нечто»","Джон Карпентер, 1982",3,0,0],["film-220",0,"«Ребенок Розмари»","Роман Полански, 1968",3,0,0],["film-221",0,"«Омен»","Ричард Доннер, 1976",3,0,0],["film-222",0,"«Ведьма из Блэр: Курсовая с того света»","Дэниел Мирик и Эдуардо Санчес, 1999",3,0,0],["film-223",0,"«Солнцестояние»","Ари Астер, 2019",3,0,0],["film-224",0,"«Реинкарнация»","Ари Астер, 2018",3,0,0],["film-225",0,"«Мгла»","Фрэнк Дарабонт, 2007",3,0,0],["film-226",0,"«Муха»","Дэвид Кроненберг, 1986",3,0,0],["film-227",0,"«Кэрри»","Брайан Де Пальма, 1976",3,0,0],["film-228",0,"«Мизери»","Роб Райнер, 1990",3,0,0],["film-229",0,"«Зловещие мертвецы»","Сэм Рэйми, 1981",3,0,0],["film-230",0,"«Суини Тодд, демон-парикмахер с Флит-стрит»","Тим Бертон, 2007",3,0,0],["film-231",0,"«Фокус-покус»","Кенни Ортега, 1993",3,0,0],["film-232",0,"«Беги, Лола, беги»","Том Тыквер, 1998",3,0,0],["film-233",0,"«Красота по-американски»","Сэм Мендес, 1999",3,0,0],["film-234",0,"«Американский психопат»","Мэри Хэррон, 2000",3,0,0],["film-235",0,"«Драйв»","Николас Виндинг Рефн, 2011",3,0,0],["film-236",0,"«Малхолланд Драйв»","Дэвид Линч, 2001",3,0,0],["film-237",0,"«Брат»","Алексей Балабанов, 1997",1,1,0],["film-238",0,"«Брат 2»","Алексей Балабанов, 2000",1,1,0],["film-239",0,"«Ирония судьбы, или С легким паром!»","Эльдар Рязанов, 1975",1,1,0],["film-240",0,"«Бриллиантовая рука»","Леонид Гайдай, 1968",1,1,0],["film-241",0,"«Кавказская пленница, или Новые приключения Шурика»","Леонид Гайдай, 1967",1,1,0],["film-242",0,"«Операция „Ы“ и другие приключения Шурика»","Леонид Гайдай, 1965",1,1,0],["film-243",0,"«Иван Васильевич меняет профессию»","Леонид Гайдай, 1973",1,1,0],["film-244",0,"«Джентльмены удачи»","Александр Серый, 1971",1,1,0],["film-245",0,"«Москва слезам не верит»","Владимир Меньшов, 1979",1,1,0],["film-246",0,"«Служебный роман»","Эльдар Рязанов, 1977",1,1,0],["film-247",0,"«Белое солнце пустыни»","Владимир Мотыль, 1969",1,1,0],["film-248",0,"«Морозко»","Александр Роу, 1964",1,1,0],["film-249",0,"«Приключения Шерлока Холмса и доктора Ватсона»","Игорь Масленников, 1979",1,1,0],["film-250",0,"«Д'Артаньян и три мушкетера»","Георгий Юнгвальд-Хилькевич, 1978",1,1,0],["film-251",0,"«Гостья из будущего»","Павел Арсенов, 1984",1,1,0],["film-252",0,"«Приключения Электроника»","Константин Бромберг, 1979",1,1,0],["film-253",0,"«Ну, погоди!»","мультфильм, Вячеслав Котеночкин, 1969",1,1,0],["film-254",0,"«Трое из Простоквашино»","мультфильм, Владимир Попов, 1978",1,1,0],["film-255",0,"«Винни-Пух»","мультфильм, Федор Хитрук, 1969",1,1,0],["film-256",0,"«Чебурашка»","Дмитрий Дьяченко, 2023",1,1,0],["film-257",0,"«Бременские музыканты»","мультфильм, Инесса Ковалевская, 1969",1,1,0],["film-258",0,"«Малыш и Карлсон»","мультфильм, Борис Степанцев, 1968",1,1,0],["film-259",0,"«Падал прошлогодний снег»","мультфильм, Александр Татарский, 1983",1,1,0],["film-260",0,"«Жил-был пес»","мультфильм, Эдуард Назаров, 1982",1,1,0],["film-261",0,"«Маша и Медведь»","мультсериал, с 2009",1,1,0],["film-262",0,"«Смешарики»","мультсериал, с 2004",1,1,0],["film-263",0,"«Алеша Попович и Тугарин Змей»","мультфильм, Константин Бронзит, 2004",1,1,0],["film-264",0,"«Холоп»","Клим Шипенко, 2019",1,1,0],["film-265",0,"«Движение вверх»","Антон Мегердичев, 2017",1,1,0],["film-266",0,"«Легенда № 17»","Николай Лебедев, 2012",1,1,0],["film-267",0,"«Т-34»","Алексей Сидоров, 2018",1,1,0],["film-268",0,"«9 рота»","Федор Бондарчук, 2005",1,1,0],["film-269",0,"«Ночной дозор»","Тимур Бекмамбетов, 2004",1,1,0],["film-270",0,"«Особенности национальной охоты»","Александр Рогожкин, 1995",1,1,0],["film-271",0,"«Бумер»","Петр Буслов, 2003",1,1,0],["film-272",0,"«Собачье сердце»","Владимир Бортко, 1988",1,1,0],["film-273",0,"«Мастер и Маргарита»","сериал, Владимир Бортко, 2005",1,1,0],["film-274",0,"«Место встречи изменить нельзя»","Станислав Говорухин, 1979",1,1,0],["film-275",0,"«Семнадцать мгновений весны»","Татьяна Лиознова, 1973",1,1,0],["film-276",0,"«Любовь и голуби»","Владимир Меньшов, 1984",1,1,0],["film-277",0,"«12 стульев»","Леонид Гайдай, 1971",1,1,0],["film-278",0,"«Приключения Буратино»","Леонид Нечаев, 1975",1,1,0],["film-279",0,"«Чародеи»","Константин Бромберг, 1982",1,1,0],["film-280",0,"«Вий»","Константин Ершов и Георгий Кропачев, 1967",1,1,0],["film-281",0,"«Елки»","новогодняя комедия, 2010",1,1,0],["film-282",0,"«Горько!»","Жора Крыжовников, 2013",1,1,0],["film-283",0,"«Последний богатырь»","Дмитрий Дьяченко, 2017",1,1,0],["film-284",0,"«Снежная королева»","мультфильм, Лев Атаманов, 1957",1,1,0],["film-285",0,"«Возвращение блудного попугая»","мультфильм, Валентин Караваев, 1984",1,1,0],["film-286",0,"«Приключения капитана Врунгеля»","мультфильм, Давид Черкасский, 1976",1,1,0],["film-287",0,"«Приключения кота Леопольда»","мультфильм, Анатолий Резников, 1975",1,1,0],["film-288",0,"«Здравствуйте, я ваша тетя!»","Виктор Титов, 1975",1,1,0],["film-289",0,"«Старик Хоттабыч»","Геннадий Казанский, 1956",1,1,0],["film-290",0,"«Человек-амфибия»","Владимир Чеботарев и Геннадий Казанский, 1961",1,1,0],["film-291",0,"«Ежик в тумане»","мультфильм, Юрий Норштейн, 1975",1,1,0],["film-292",0,"«Летучий корабль»","мультфильм, Гарри Бардин, 1979",1,1,0],["film-293",0,"«Остров сокровищ»","мультфильм, Давид Черкасский, 1988",1,1,0],["film-294",0,"«Тайна третьей планеты»","мультфильм, Роман Качанов, 1981",1,1,0],["film-295",0,"«Сталинград»","Федор Бондарчук, 2013",2,1,0],["film-296",0,"«Дневной дозор»","Тимур Бекмамбетов, 2006",2,1,0],["film-297",0,"«ДМБ»","Роман Качанов, 2000",2,1,0],["film-298",0,"«Жмурки»","Алексей Балабанов, 2005",2,1,0],["film-299",0,"«Кин-дза-дза!»","Георгий Данелия, 1986",2,1,0],["film-300",0,"«Мимино»","Георгий Данелия, 1977",2,1,0],["film-301",0,"«Афоня»","Георгий Данелия, 1975",2,1,0],["film-302",0,"«Гараж»","Эльдар Рязанов, 1979",2,1,0],["film-303",0,"«Вокзал для двоих»","Эльдар Рязанов, 1982",2,1,0],["film-304",0,"«Берегись автомобиля»","Эльдар Рязанов, 1966",2,1,0],["film-305",0,"«Жестокий романс»","Эльдар Рязанов, 1984",2,1,0],["film-306",0,"«Карнавальная ночь»","Эльдар Рязанов, 1956",2,1,0],["film-307",0,"«Гусарская баллада»","Эльдар Рязанов, 1962",2,1,0],["film-308",0,"«Офицеры»","Владимир Роговой, 1971",2,1,0],["film-309",0,"«В бой идут одни „старики“»","Леонид Быков, 1973",2,1,0],["film-310",0,"«А зори здесь тихие…»","Станислав Ростоцкий, 1972",2,1,0],["film-311",0,"«Война и мир»","Сергей Бондарчук, 1965–1967",2,1,0],["film-312",0,"«Утомленные солнцем»","Никита Михалков, 1994",2,1,0],["film-313",0,"«Сибирский цирюльник»","Никита Михалков, 1998",2,1,0],["film-314",0,"«Пес Барбос и необычный кросс»","Леонид Гайдай, 1961",2,1,0],["film-315",0,"«Спортлото-82»","Леонид Гайдай, 1982",2,1,0],["film-316",0,"«Про Красную Шапочку»","Леонид Нечаев, 1977",2,1,0],["film-317",0,"«Мэри Поппинс, до свидания»","Леонид Квинихидзе, 1983",2,1,0],["film-318",0,"«Тот самый Мюнхгаузен»","Марк Захаров, 1979",2,1,0],["film-319",0,"«Обыкновенное чудо»","Марк Захаров, 1978",2,1,0],["film-320",0,"«Формула любви»","Марк Захаров, 1984",2,1,0],["film-321",0,"«Неуловимые мстители»","Эдмонд Кеосаян, 1966",2,1,0],["film-322",0,"«Экипаж»","Александр Митта, 1979",2,1,0],["film-323",0,"«Пираты XX века»","Борис Дуров, 1979",2,1,0],["film-324",0,"«Королевство кривых зеркал»","Александр Роу, 1963",2,1,0],["film-325",0,"«Чучело»","Ролан Быков, 1983",2,1,0],["film-326",0,"«Мы из будущего»","Андрей Малюков, 2008",2,1,0],["film-327",0,"«Духless»","Роман Прыгунов, 2012",2,1,0],["film-328",0,"«Остров»","Павел Лунгин, 2006",2,1,0],["film-329",0,"«Майор Гром: Чумной Доктор»","Олег Трофим, 2021",2,1,0],["film-330",0,"«Притяжение»","Федор Бондарчук, 2017",2,1,0],["film-331",0,"«Девчата»","Юрий Чулюкин, 1961",2,1,0],["film-332",0,"«Добро пожаловать, или Посторонним вход воспрещен»","Элем Климов, 1964",2,1,0],["film-333",0,"«Иван Царевич и Серый Волк»","мультфильм, Владимир Торопчин, 2011",2,1,0],["film-334",0,"«Двенадцать месяцев»","мультфильм, Иван Иванов-Вано, 1956",2,1,0],["film-335",0,"«Варежка»","мультфильм, Роман Качанов, 1967",2,1,0],["film-336",0,"«Каникулы Бонифация»","мультфильм, Федор Хитрук, 1965",2,1,0],["film-337",0,"«Котенок по имени Гав»","мультфильм, Лев Атаманов, 1976",2,1,0],["film-338",0,"«Пластилиновая ворона»","мультфильм, Александр Татарский, 1981",2,1,0],["film-339",0,"«Вовка в Тридевятом царстве»","мультфильм, Борис Степанцев, 1965",2,1,0],["film-340",0,"«Крылья, ноги и хвосты»","мультфильм, 1986",2,1,0],["film-341",0,"«Покровские ворота»","Михаил Козаков, 1982",2,1,0],["film-342",0,"«Особенности национальной рыбалки»","Александр Рогожкин, 1998",2,1,0],["film-343",0,"«Стиляги»","Валерий Тодоровский, 2008",2,1,0],["film-344",0,"«Адмиралъ»","Андрей Кравчук, 2008",2,1,0],["film-345",0,"«Белый Бим Черное ухо»","Станислав Ростоцкий, 1977",2,1,0],["film-346",0,"«Чапаев»","братья Васильевы, 1934",2,1,0],["film-347",0,"«Человек с бульвара Капуцинов»","Алла Сурикова, 1987",2,1,0],["film-348",0,"«Веселые ребята»","Григорий Александров, 1934",2,1,0],["film-349",0,"«Обитаемый остров»","Федор Бондарчук, 2008",2,1,0],["film-350",0,"«Груз 200»","Алексей Балабанов, 2007",3,1,0],["film-351",0,"«Осенний марафон»","Георгий Данелия, 1979",3,1,0],["film-352",0,"«Я шагаю по Москве»","Георгий Данелия, 1963",3,1,0],["film-353",0,"«Иди и смотри»","Элем Климов, 1985",3,1,0],["film-354",0,"«Летят журавли»","Михаил Калатозов, 1957",3,1,0],["film-355",0,"«Сталкер»","Андрей Тарковский, 1979",3,1,0],["film-356",0,"«Солярис»","Андрей Тарковский, 1972",3,1,0],["film-357",0,"«Зеркало»","Андрей Тарковский, 1974",3,1,0],["film-358",0,"«Андрей Рублев»","Андрей Тарковский, 1966",3,1,0],["film-359",0,"«Броненосец „Потемкин“»","Сергей Эйзенштейн, 1925",3,1,0],["film-360",0,"«Свой среди чужих, чужой среди своих»","Никита Михалков, 1974",3,1,0],["film-361",0,"«Не может быть!»","Леонид Гайдай, 1975",3,1,0],["film-362",0,"«Курьер»","Карен Шахназаров, 1986",3,1,0],["film-363",0,"«Левиафан»","Андрей Звягинцев, 2014",3,1,0],["film-364",0,"«Возвращение»","Андрей Звягинцев, 2003",3,1,0],["film-365",0,"«Нелюбовь»","Андрей Звягинцев, 2017",3,1,0],["film-366",0,"«Дурак»","Юрий Быков, 2014",3,1,0],["film-367",0,"«Республика ШКИД»","Геннадий Полока, 1966",3,1,0],["film-368",0,"«Золотая антилопа»","мультфильм, Лев Атаманов, 1954",3,1,0],["film-369",0,"«Сказка сказок»","мультфильм, Юрий Норштейн, 1979",3,1,0],["film-370",0,"«Трудно быть богом»","Алексей Герман, 2013",3,1,0],["film-371",0,"«Вам и не снилось…»","Илья Фрэз, 1980",3,1,0],["film-372",0,"«Доживем до понедельника»","Станислав Ростоцкий, 1968",3,1,0],["film-373",0,"«Весна на Заречной улице»","Феликс Миронер и Марлен Хуциев, 1956",3,1,0],["film-374",0,"«Холодное лето пятьдесят третьего…»","Александр Прошкин, 1987",3,1,0],["film-375",0,"«Интердевочка»","Петр Тодоровский, 1989",3,1,0],["film-376",0,"«Маленькая Вера»","Василий Пичул, 1988",3,1,0],["film-377",0,"«Асса»","Сергей Соловьев, 1987",3,1,0],["film-378",0,"«Игла»","Рашид Нугманов, 1988",3,1,0],["film-379",0,"«Кукушка»","Александр Рогожкин, 2002",3,1,0],["film-380",0,"«Мой ласковый и нежный зверь»","Эмиль Лотяну, 1978",3,1,0],["film-381",0,"«Цирк»","Григорий Александров, 1936",3,1,0],["film-382",0,"«Ворошиловский стрелок»","Станислав Говорухин, 1999",3,1,0],["film-383",0,"«Вор»","Павел Чухрай, 1997",3,1,0],["film-384",0,"«Кавказский пленник»","Сергей Бодров-старший, 1996",3,1,0],["film-385",0,"«Сестры»","Сергей Бодров-младший, 2001",3,1,0],["person-001",1,"Джим Керри","«Маска», «Эйс Вентура», «Брюс Всемогущий»",1,0,0],["person-002",1,"Леонардо Ди Каприо","«Титаник», «Начало», «Волк с Уолл-стрит»",1,0,0],["person-003",1,"Брэд Питт","«Бойцовский клуб», «Троя»",1,0,0],["person-004",1,"Джонни Депп","Джек Воробей в «Пиратах Карибского моря»",1,0,0],["person-005",1,"Арнольд Шварценеггер","«Терминатор», «Хищник»",1,0,0],["person-006",1,"Сильвестр Сталлоне","«Рокки», «Рэмбо»",1,0,0],["person-007",1,"Джеки Чан","«Час пик», трюки и кунг-фу",1,0,0],["person-008",1,"Брюс Ли","«Выход дракона»",1,0,0],["person-009",1,"Чарли Чаплин","котелок, тросточка, «Огни большого города»",1,0,0],["person-010",1,"Мэрилин Монро","«В джазе только девушки», белое платье над решеткой метро",1,0,0],["person-011",1,"Том Круз","«Миссия невыполнима», «Топ Ган»",1,0,0],["person-012",1,"Том Хэнкс","«Форрест Гамп», «Изгой»",1,0,0],["person-013",1,"Уилл Смит","«Люди в черном»",1,0,0],["person-014",1,"Киану Ривз","«Матрица», «Джон Уик»",1,0,0],["person-015",1,"Джейсон Стэйтем","«Перевозчик», «Карты, деньги, два ствола»",1,0,0],["person-016",1,"Дуэйн „Скала“ Джонсон","«Джуманджи: Зов джунглей», «Форсаж»",1,0,0],["person-017",1,"Анджелина Джоли","«Лара Крофт: Расхитительница гробниц», «Малефисента»",1,0,0],["person-018",1,"Морган Фримен","«Побег из Шоушенка», Бог в «Брюсе Всемогущем»",1,0,0],["person-019",1,"Роберт Дауни-младший","Тони Старк в «Железном человеке»",1,0,0],["person-020",1,"Стивен Спилберг","режиссер «Челюстей» и «Парка Юрского периода»",1,0,0],["person-021",1,"Джеймс Кэмерон","режиссер «Титаника» и «Аватара»",1,0,0],["person-022",1,"Скарлетт Йоханссон","Черная вдова в «Мстителях»",1,0,0],["person-023",1,"Эмма Уотсон","Гермиона в «Гарри Поттере»",1,0,0],["person-024",1,"Дэниел Рэдклифф","Гарри Поттер",1,0,0],["person-025",1,"Марго Робби","«Барби», Харли Квинн",1,0,0],["person-026",1,"Роуэн Аткинсон","Мистер Бин",1,0,0],["person-027",1,"Брюс Уиллис","«Крепкий орешек», «Пятый элемент»",1,0,0],["person-028",1,"Хью Джекман","Росомаха в «Людях Икс»",1,0,0],["person-029",1,"Уолт Дисней","создатель Микки Мауса и студии Disney",1,0,0],["person-030",1,"Жан-Клод Ван Дамм","«Кровавый спорт», шпагат",1,0,0],["person-031",1,"Чак Норрис","«Крутой Уокер», шутки про Чака Норриса",1,0,0],["person-032",1,"Крис Хемсворт","Тор в «Мстителях»",1,0,0],["person-033",1,"Маколей Калкин","Кевин в «Одном доме»",1,0,0],["person-034",1,"Вин Дизель","«Форсаж», голос Грута",1,0,0],["person-035",1,"Квентин Тарантино","режиссер «Криминального чтива» и «Убить Билла»",1,0,0],["person-036",1,"Хоакин Феникс","«Джокер», «Гладиатор»",1,0,0],["person-037",1,"Альфред Хичкок","режиссер «Психо» и «Птиц»",2,0,0],["person-038",1,"Кристофер Нолан","режиссер «Начала» и «Интерстеллара»",2,0,0],["person-039",1,"Тим Бертон","режиссер «Эдварда Руки-ножницы» и «Битлджуса»",2,0,0],["person-040",1,"Мартин Скорсезе","режиссер «Таксиста» и «Волка с Уолл-стрит»",2,0,0],["person-041",1,"Роберт Де Ниро","«Таксист», «Крестный отец 2»",2,0,0],["person-042",1,"Аль Пачино","«Крестный отец», «Лицо со шрамом»",1,0,0],["person-043",1,"Марлон Брандо","Дон Корлеоне в «Крестном отце»",2,0,0],["person-044",1,"Джек Николсон","«Сияние», «Пролетая над гнездом кукушки»",2,0,0],["person-045",1,"Энтони Хопкинс","Ганнибал Лектер в «Молчании ягнят»",2,0,0],["person-046",1,"Мэрил Стрип","«Дьявол носит Prada»",2,0,0],["person-047",1,"Николь Кидман","«Другие», «Мулен Руж!»",2,0,0],["person-048",1,"Джулия Робертс","«Красотка»",1,0,0],["person-049",1,"Одри Хепберн","«Римские каникулы», «Завтрак у Тиффани»",2,0,0],["person-050",1,"Хит Леджер","Джокер в «Темном рыцаре»",2,0,0],["person-051",1,"Мэттью Макконахи","«Интерстеллар»",2,0,0],["person-052",1,"Райан Гослинг","«Драйв», «Ла-Ла Ленд», Кен в «Барби»",2,0,0],["person-053",1,"Кейт Уинслет","Роуз в «Титанике»",2,0,0],["person-054",1,"Мэтт Дэймон","«Идентификация Борна», «Марсианин»",2,0,0],["person-055",1,"Бен Стиллер","«Знакомство с родителями», «Ночь в музее»",2,0,0],["person-056",1,"Эдди Мерфи","«Полицейский из Беверли-Хиллз», «Доктор Дулиттл»",1,0,0],["person-057",1,"Адам Сэндлер","«Клик: С пультом по жизни», «50 первых поцелуев»",2,0,0],["person-058",1,"Луи де Фюнес","«Фантомас», «Жандарм из Сен-Тропе»",1,0,0],["person-059",1,"Пьер Ришар","«Высокий блондин в черном ботинке», «Невезучие»",1,0,0],["person-060",1,"Жерар Депардье","Обеликс в «Астериксе и Обеликсе»",1,0,0],["person-061",1,"Жан Рено","«Леон»",2,0,0],["person-062",1,"Ален Делон","«Зорро», «Самурай»",1,0,0],["person-063",1,"Адриано Челентано","«Укрощение строптивого»",1,0,0],["person-064",1,"Жан-Поль Бельмондо","«Профессионал»",1,0,0],["person-065",1,"Клинт Иствуд","«Хороший, плохой, злой», ковбой с прищуром",2,0,0],["person-066",1,"Харрисон Форд","Индиана Джонс, Хан Соло",1,0,0],["person-067",1,"Мел Гибсон","«Храброе сердце», «Смертельное оружие»",2,0,0],["person-068",1,"Николас Кейдж","«Скала», «Призрачный гонщик»",1,0,0],["person-069",1,"Джон Траволта","«Криминальное чтиво», «Лихорадка субботнего вечера»",2,0,0],["person-070",1,"Ума Турман","«Убить Билла», «Криминальное чтиво»",2,0,0],["person-071",1,"Сэмюэл Л. Джексон","«Криминальное чтиво», Ник Фьюри",2,0,0],["person-072",1,"Кристиан Бейл","Бэтмен в «Темном рыцаре», «Американский психопат»",2,0,0],["person-073",1,"Джордж Лукас","создатель «Звездных войн»",2,0,0],["person-074",1,"Питер Джексон","режиссер «Властелина колец»",2,0,0],["person-075",1,"Гай Ричи","режиссер «Большого куша» и «Джентльменов»",2,0,0],["person-076",1,"Люк Бессон","режиссер «Леона» и «Пятого элемента»",2,0,0],["person-077",1,"Хаяо Миядзаки","режиссер «Унесенных призраками»",2,0,0],["person-078",1,"Стивен Сигал","«В осаде»",2,0,0],["person-079",1,"Киллиан Мерфи","«Оппенгеймер», «Острые козырьки»",2,0,0],["person-080",1,"Тимоти Шаламе","«Дюна», «Вонка»",2,0,0],["person-081",1,"Кира Найтли","«Пираты Карибского моря»",2,0,0],["person-082",1,"Орландо Блум","Леголас во «Властелине колец»",2,0,0],["person-083",1,"Дженнифер Лоуренс","«Голодные игры»",2,0,0],["person-084",1,"Кристен Стюарт","«Сумерки»",2,0,0],["person-085",1,"Роберт Паттинсон","«Сумерки», «Бэтмен»",2,0,0],["person-086",1,"Том Холланд","«Человек-паук»",1,0,0],["person-087",1,"Шэрон Стоун","«Основной инстинкт»",1,0,0],["person-088",1,"Патрик Суэйзи","«Грязные танцы», «Призрак»",2,0,0],["person-089",1,"Кэмерон Диас","«Маска», «Ангелы Чарли»",2,0,0],["person-090",1,"Майкл Джей Фокс","Марти в «Назад в будущее»",2,0,0],["person-091",1,"Шон Коннери","первый Джеймс Бонд",2,0,0],["person-092",1,"Дэниел Крейг","Джеймс Бонд в «Казино „Рояль“»",2,0,0],["person-093",1,"Хью Грант","«Реальная любовь», «Ноттинг Хилл»",2,0,0],["person-094",1,"Мила Йовович","«Пятый элемент», «Обитель зла»",2,0,0],["person-095",1,"Антонио Бандерас","«Маска Зорро», голос Кота в сапогах",2,0,0],["person-096",1,"Джейсон Момоа","«Аквамен»",2,0,0],["person-097",1,"Дэвид Финчер","режиссер «Бойцовского клуба» и «Семи»",3,0,1],["person-098",1,"Стэнли Кубрик","режиссер «Сияния» и «Заводного апельсина»",3,0,0],["person-099",1,"Фрэнсис Форд Коппола","режиссер «Крестного отца»",3,0,0],["person-100",1,"Дэвид Линч","«Твин Пикс», «Малхолланд Драйв»",3,0,0],["person-101",1,"Ларс фон Трир","«Догвилль», «Меланхолия»",3,0,0],["person-102",1,"Уэс Андерсон","режиссер «Отеля „Гранд Будапешт“»",3,0,0],["person-103",1,"Ридли Скотт","режиссер «Чужого» и «Гладиатора»",3,0,0],["person-104",1,"Дени Вильнев","режиссер «Дюны» и «Бегущего по лезвию 2049»",3,0,0],["person-105",1,"Джеймс Ван","режиссер «Пилы» и «Заклятия»",3,0,0],["person-106",1,"Джон Карпентер","режиссер «Хэллоуина» и «Нечто»",3,0,0],["person-107",1,"Уэс Крэйвен","режиссер «Кошмара на улице Вязов» и «Крика»",3,0,0],["person-108",1,"Гэри Олдман","Стэнсфилд в «Леоне», «Дракула»",3,0,0],["person-109",1,"Дольф Лундгрен","Иван Драго в «Рокки 4»",3,0,0],["person-110",1,"Зендея","«Дюна», «Человек-паук: Возвращение домой»",3,0,0],["person-111",1,"Вигго Мортенсен","Арагорн во «Властелине колец»",3,0,0],["person-112",1,"Иэн Маккеллен","Гэндальф во «Властелине колец»",3,0,0],["person-113",1,"Деми Мур","«Призрак»",3,0,0],["person-114",1,"Сигурни Уивер","Рипли в «Чужом»",3,0,0],["person-115",1,"Элизабет Тейлор","«Клеопатра»",3,0,0],["person-116",1,"Кристофер Ллойд","Док Браун в «Назад в будущее»",3,0,0],["person-117",1,"Бастер Китон","«Генерал», комик, который никогда не улыбается",3,0,0],["person-118",1,"Кристоф Вальц","Ганс Ланда в «Бесславных ублюдках»",3,0,0],["person-119",1,"Сергей Бодров","Данила Багров в «Брате»",1,1,0],["person-120",1,"Юрий Никулин","«Бриллиантовая рука», Балбес, цирк на Цветном",1,1,0],["person-121",1,"Андрей Миронов","«Бриллиантовая рука», «Человек с бульвара Капуцинов»",1,1,0],["person-122",1,"Никита Михалков","«Утомленные солнцем», «Сибирский цирюльник»",1,1,0],["person-123",1,"Владимир Высоцкий","Глеб Жеглов в «Место встречи изменить нельзя»",1,1,0],["person-124",1,"Михаил Боярский","д'Артаньян",1,1,0],["person-125",1,"Евгений Леонов","«Джентльмены удачи», голос Винни-Пуха",1,1,0],["person-126",1,"Сергей Безруков","Саша Белый в «Бригаде»",1,1,0],["person-127",1,"Сергей Светлаков","«Елки», «Наша Russia»",1,1,0],["person-128",1,"Иван Ургант","«Елки»",1,1,0],["person-129",1,"Александр Петров","«Притяжение», «Т-34»",1,1,0],["person-130",1,"Виктор Цой","«Игла», «Асса»",1,1,0],["person-131",1,"Данила Козловский","«Легенда № 17», «Духless»",1,1,0],["person-132",1,"Константин Хабенский","«Ночной дозор»",1,1,0],["person-133",1,"Вячеслав Тихонов","Штирлиц",1,1,0],["person-134",1,"Андрей Мягков","Женя Лукашин в «Иронии судьбы»",1,1,0],["person-135",1,"Георгий Вицин","Трус в «Кавказской пленнице»",1,1,0],["person-136",1,"Савелий Крамаров","Косой в «Джентльменах удачи»",1,1,0],["person-137",1,"Анатолий Папанов","Лелик в «Бриллиантовой руке», голос Волка в «Ну, погоди!»",1,1,0],["person-138",1,"Леонид Гайдай","режиссер «Бриллиантовой руки» и «Кавказской пленницы»",1,1,0],["person-139",1,"Эльдар Рязанов","режиссер «Иронии судьбы» и «Служебного романа»",1,1,0],["person-140",1,"Федор Бондарчук","«9 рота», «Сталинград»",1,1,0],["person-141",1,"Фаина Раневская","«Подкидыш»: «Муля, не нервируй меня!»",1,1,0],["person-142",1,"Людмила Гурченко","«Карнавальная ночь», «Вокзал для двоих»",1,1,0],["person-143",1,"Олег Табаков","Шелленберг в «Семнадцати мгновениях весны», голос кота Матроскина",1,1,0],["person-144",1,"Алексей Балабанов","режиссер «Брата» и «Жмурок»",2,1,0],["person-145",1,"Александр Демьяненко","Шурик",1,1,0],["person-146",1,"Леонид Куравлев","«Афоня», Жорж Милославский",2,1,0],["person-147",1,"Василий Ливанов","Шерлок Холмс",1,1,0],["person-148",1,"Владимир Машков","«Движение вверх», «Вор»",2,1,0],["person-149",1,"Иван Охлобыстин","доктор Быков в «Интернах»",1,1,0],["person-150",1,"Михаил Пореченков","«Агент национальной безопасности», прапорщик Дыгало в «9 роте»",1,1,0],["person-151",1,"Фрунзик Мкртчян","«Мимино», Джабраил в «Кавказской пленнице»",2,1,0],["person-152",1,"Наталья Варлей","Нина в «Кавказской пленнице», панночка в «Вии»",2,1,0],["person-153",1,"Алиса Фрейндлих","Калугина в «Служебном романе»",2,1,0],["person-154",1,"Алексей Баталов","Гоша в «Москва слезам не верит»",2,1,0],["person-155",1,"Армен Джигарханян","Горбатый в «Место встречи изменить нельзя»",2,1,0],["person-156",1,"Евгений Евстигнеев","профессор Преображенский в «Собачьем сердце»",2,1,0],["person-157",1,"Владимир Толоконников","Шариков в «Собачьем сердце»",2,1,0],["person-158",1,"Юрий Яковлев","Иван Грозный и Бунша, Ипполит",2,1,0],["person-159",1,"Олег Меньшиков","«Покровские ворота», Тарасов в «Легенде № 17»",2,1,0],["person-160",1,"Петр Мамонов","«Остров»",2,1,0],["person-161",1,"Нонна Мордюкова","управдом в «Бриллиантовой руке», «Родня»",2,1,0],["person-162",1,"Георгий Милляр","Баба-яга и Кощей в фильмах-сказках",2,1,0],["person-163",1,"Михаил Пуговкин","Якин в «Иване Васильевиче», отец Федор в «12 стульях»",2,1,0],["person-164",1,"Евгений Моргунов","Бывалый",1,1,0],["person-165",1,"Олег Янковский","«Тот самый Мюнхгаузен»",2,1,0],["person-166",1,"Андрей Тарковский","режиссер «Сталкера» и «Соляриса»",3,1,0],["person-167",1,"Александр Абдулов","Медведь в «Обыкновенном чуде»",3,1,0],["person-168",1,"Иннокентий Смоктуновский","Деточкин в «Берегись автомобиля»",3,1,0],["person-169",1,"Виталий Соломин","доктор Ватсон",3,1,0],["person-170",1,"Юра Борисов","«Анора», «Бык»",3,1,0],["person-171",1,"Евгений Миронов","князь Мышкин в «Идиоте»",3,1,0],["person-172",1,"Рената Литвинова","«Страна глухих»",3,1,0],["person-173",1,"Чулпан Хаматова","«Гудбай, Ленин!», «Доктор Лиза»",3,1,0],["person-174",1,"Георгий Данелия","режиссер «Кин-дза-дза!» и «Мимино»",3,1,0],["person-175",1,"Вахтанг Кикабидзе","«Мимино»",3,1,0],["person-176",1,"Олег Басилашвили","Самохвалов в «Служебном романе», «Вокзал для двоих»",3,1,0],["person-177",1,"Ирина Муравьева","«Москва слезам не верит», «Карнавал»",3,1,0],["person-178",1,"Вера Алентова","Катерина в «Москва слезам не верит»",3,1,0],["person-179",1,"Владимир Меньшов","режиссер «Москва слезам не верит» и «Любовь и голуби»",3,1,0],["person-180",1,"Сергей Бондарчук","«Война и мир», «Судьба человека»",3,1,0],["person-181",1,"Сергей Эйзенштейн","режиссер «Броненосца „Потемкин“»",3,1,0],["person-182",1,"Юрий Норштейн","режиссер «Ежика в тумане»",3,1,0],["person-183",1,"Ролан Быков","режиссер «Чучела», Бармалей в «Айболите-66»",3,1,0],["person-184",1,"Николай Караченцов","«Собака на сене», Урри в «Приключениях Электроника»",3,1,0],["person-185",1,"Леонид Ярмольник","Румата в «Трудно быть богом»",3,1,0],["person-186",1,"Наталья Селезнева","Зина в «Иване Васильевиче»",3,1,0],["person-187",1,"Татьяна Самойлова","«Летят журавли»",3,1,0],["person-188",1,"Любовь Орлова","«Цирк», «Веселые ребята»",3,1,0],["person-189",1,"Александр Роу","режиссер «Морозко»",3,1,0],["person-190",1,"Алексей Герман","режиссер «Трудно быть богом»",3,1,0],["person-191",1,"Андрей Звягинцев","режиссер «Левиафана» и «Нелюбви»",3,1,0],["person-192",1,"Тимур Бекмамбетов","режиссер «Ночного дозора»",3,1,0],["person-193",1,"Клим Шипенко","режиссер «Холопа» и «Вызова»",3,1,0],["person-194",1,"Жора Крыжовников","режиссер «Горько!»",3,1,0],["person-195",1,"Ирина Алферова","Констанция в «Д'Артаньяне и трех мушкетерах»",3,1,0],["person-196",1,"Анастасия Вертинская","Гуттиэре в «Человеке-амфибии», Ассоль в «Алых парусах»",3,1,0],["person-197",1,"Леонид Быков","режиссер и Маэстро в «В бой идут одни „старики“»",3,1,0],["hero-001",2,"Шрек","«Шрек», 2001",1,0,0],["hero-002",2,"Джокер","«Темный рыцарь», 2008 и «Джокер», 2019",1,0,0],["hero-003",2,"Терминатор","«Терминатор», 1984",1,0,0],["hero-004",2,"Гарри Поттер","«Гарри Поттер», 2001–2011",1,0,0],["hero-005",2,"Дарт Вейдер","«Звездные войны», 1977",1,0,0],["hero-006",2,"Магистр Йода","«Звездные войны: Империя наносит ответный удар», 1980",1,0,0],["hero-007",2,"Джек Воробей","«Пираты Карибского моря», 2003",1,0,0],["hero-008",2,"Голлум","«Властелин колец», 2001–2003",1,0,0],["hero-009",2,"Гэндальф","«Властелин колец», 2001–2003",1,0,0],["hero-010",2,"Человек-паук","«Человек-паук», 2002",1,0,0],["hero-011",2,"Бэтмен","«Бэтмен», 1989 и «Темный рыцарь», 2008",1,0,0],["hero-012",2,"Супермен","«Супермен», 1978",1,0,0],["hero-013",2,"Халк","«Мстители», 2012",1,0,0],["hero-014",2,"Железный человек","«Железный человек», 2008",1,0,0],["hero-015",2,"Дэдпул","«Дэдпул», 2016",1,0,0],["hero-016",2,"Кинг-Конг","«Кинг-Конг», 1933 и 2005",1,0,0],["hero-017",2,"Годзилла","«Годзилла», 1954",1,0,0],["hero-018",2,"Рэмбо","«Рэмбо: Первая кровь», 1982",1,0,0],["hero-019",2,"Рокки Бальбоа","«Рокки», 1976",1,0,0],["hero-020",2,"Индиана Джонс","«Индиана Джонс: В поисках утраченного ковчега», 1981",1,0,0],["hero-021",2,"Джеймс Бонд","агент 007, фильмы с 1962",1,0,0],["hero-022",2,"Шерлок Холмс","экранизации Конан Дойла",1,0,0],["hero-023",2,"Зорро","«Маска Зорро», 1998",1,0,0],["hero-024",2,"Тарзан","«Тарзан», 1999",1,0,0],["hero-025",2,"Микки Маус","мультфильмы Disney, с 1928",1,0,0],["hero-026",2,"Губка Боб","мультсериал «Губка Боб Квадратные Штаны», с 1999",1,0,0],["hero-027",2,"Гомер Симпсон","мультсериал «Симпсоны», с 1989",1,0,0],["hero-028",2,"Том и Джерри","мультсериал «Том и Джерри», с 1940",1,0,0],["hero-029",2,"Скрудж Макдак","мультсериал «Утиные истории», 1987",1,0,0],["hero-030",2,"Чип и Дейл","мультсериал «Чип и Дейл спешат на помощь», 1989",1,0,0],["hero-031",2,"Симба","«Король Лев», 1994",1,0,0],["hero-032",2,"Тимон и Пумба","«Король Лев», 1994",1,0,0],["hero-033",2,"Джинн","«Аладдин», 1992",1,0,0],["hero-034",2,"Русалочка Ариэль","«Русалочка», 1989",1,0,0],["hero-035",2,"Эльза","«Холодное сердце», 2013",1,0,0],["hero-036",2,"Снеговик Олаф","«Холодное сердце», 2013",1,0,0],["hero-037",2,"Базз Лайтер","«История игрушек», 1995",1,0,0],["hero-038",2,"Миньоны","«Гадкий я», 2010",1,0,0],["hero-039",2,"Панда По","«Кунг-фу Панда», 2008",1,0,0],["hero-040",2,"Пингвины из «Мадагаскара»","«Мадагаскар», 2005",1,0,0],["hero-041",2,"Белка Скрат","«Ледниковый период», 2002",1,0,0],["hero-042",2,"Осел","«Шрек», 2001",1,0,0],["hero-043",2,"Кот в сапогах","«Шрек 2», 2004",1,0,0],["hero-044",2,"Мистер Бин","сериал «Мистер Бин», 1990",1,0,0],["hero-045",2,"Фредди Крюгер","«Кошмар на улице Вязов», 1984",1,0,0],["hero-046",2,"Пеннивайз","«Оно», 2017",1,0,0],["hero-047",2,"Чаки","«Детские игры», 1988",1,0,0],["hero-048",2,"Самара из «Звонка»","«Звонок», 2002",1,0,0],["hero-049",2,"Граф Дракула","«Дракула», 1992",1,0,0],["hero-050",2,"Чудовище Франкенштейна","«Франкенштейн», 1931",1,0,0],["hero-051",2,"Мумия","«Мумия», 1999",1,0,0],["hero-052",2,"Привидение Каспер","«Каспер», 1995",1,0,0],["hero-053",2,"Уэнсдей Аддамс","«Семейка Аддамс», 1991 и «Уэнсдей», 2022",1,0,0],["hero-054",2,"Гринч","«Гринч — похититель Рождества», 2000",1,0,0],["hero-055",2,"Нео","«Матрица», 1999",1,0,0],["hero-056",2,"Форрест Гамп","«Форрест Гамп», 1994",1,0,0],["hero-057",2,"Кевин Маккалистер","«Один дома», 1990",1,0,0],["hero-058",2,"Эйс Вентура","«Эйс Вентура: Розыск домашних животных», 1994",1,0,0],["hero-059",2,"Маска","«Маска», 1994",1,0,0],["hero-060",2,"Мэри Поппинс","«Мэри Поппинс», 1964",1,0,0],["hero-061",2,"Вилли Вонка","«Чарли и шоколадная фабрика», 2005",1,0,0],["hero-062",2,"Питер Пэн","«Питер Пэн», 1953",1,0,0],["hero-063",2,"Пиноккио","«Пиноккио», 1940",1,0,0],["hero-064",2,"Слоненок Дамбо","«Дамбо», 1941",1,0,0],["hero-065",2,"Рапунцель","«Рапунцель: Запутанная история», 2010",1,0,0],["hero-066",2,"Чудовище","«Красавица и чудовище», 1991",1,0,0],["hero-067",2,"Белоснежка","«Белоснежка и семь гномов», 1937",1,0,0],["hero-068",2,"Золушка","«Золушка», 1950",1,0,0],["hero-069",2,"Олененок Бэмби","«Бэмби», 1942",1,0,0],["hero-070",2,"Джон Уик","«Джон Уик», 2014",1,0,0],["hero-071",2,"Дракон Беззубик","«Как приручить дракона», 2010",1,0,0],["hero-072",2,"Волан-де-Морт","«Гарри Поттер», 2001–2011",1,0,0],["hero-073",2,"Эльф Добби","«Гарри Поттер и Тайная комната», 2002",1,0,0],["hero-074",2,"Пес Хатико","«Хатико: Самый верный друг», 2009",1,0,0],["hero-075",2,"Барби","«Барби», 2023",1,0,0],["hero-076",2,"Скуби-Ду","мультсериал «Скуби-Ду», с 1969",1,0,0],["hero-077",2,"Кот Гарфилд","«Гарфилд», 2004",1,0,0],["hero-078",2,"Стич","«Лило и Стич», 2002",1,0,0],["hero-079",2,"Робин Гуд","мультфильм Disney, 1973, и множество экранизаций",1,0,0],["hero-080",2,"Чубакка","«Звездные войны», 1977",2,0,0],["hero-081",2,"Фродо","«Властелин колец», 2001–2003",2,0,0],["hero-082",2,"Чудо-женщина","«Чудо-женщина», 2017",2,0,0],["hero-083",2,"Тор","«Тор», 2011",2,0,0],["hero-084",2,"Капитан Америка","«Первый мститель», 2011",2,0,0],["hero-085",2,"Танос","«Мстители: Война бесконечности», 2018",2,0,0],["hero-086",2,"Грут","«Стражи Галактики», 2014",2,0,0],["hero-087",2,"Росомаха","«Люди Икс», 2000",2,0,0],["hero-088",2,"Чужой","«Чужой», 1979",2,0,0],["hero-089",2,"Хищник","«Хищник», 1987",2,0,0],["hero-090",2,"Робокоп","«Робокоп», 1987",2,0,0],["hero-091",2,"Дональд Дак","мультфильмы Disney, с 1934",2,0,0],["hero-092",2,"Багз Банни","мультфильмы Looney Tunes, с 1940",2,0,0],["hero-093",2,"Ковбой Вуди","«История игрушек», 1995",2,0,0],["hero-094",2,"Рыбка Дори","«В поисках Немо», 2003",2,0,0],["hero-095",2,"Грю","«Гадкий я», 2010",2,0,0],["hero-096",2,"Король Джулиан","«Мадагаскар», 2005",2,0,0],["hero-097",2,"Бродяга Чарли","фильмы Чарли Чаплина",2,0,0],["hero-098",2,"Эдвард Руки-ножницы","«Эдвард Руки-ножницы», 1990",2,0,0],["hero-099",2,"Джейсон Вурхиз","«Пятница, 13-е», с 1980",2,0,0],["hero-100",2,"Ганнибал Лектер","«Молчание ягнят», 1991",2,0,0],["hero-101",2,"Джек Торранс","«Сияние», 1980",2,0,0],["hero-102",2,"Кукла Аннабель","«Проклятие Аннабель», 2014",2,0,0],["hero-103",2,"Человек-невидимка","«Человек-невидимка», 1933",2,0,0],["hero-104",2,"Битлджус","«Битлджус», 1988",2,0,0],["hero-105",2,"Вещь (рука из «Семейки Аддамс»)","«Семейка Аддамс», 1991",2,0,0],["hero-106",2,"Тайлер Дерден","«Бойцовский клуб», 1999",2,0,1],["hero-107",2,"Морфеус","«Матрица», 1999",2,0,0],["hero-108",2,"Агент Смит","«Матрица», 1999",2,0,0],["hero-109",2,"Леон-киллер","«Леон», 1994",2,0,0],["hero-110",2,"Дон Вито Корлеоне","«Крестный отец», 1972",2,0,0],["hero-111",2,"Тони Монтана","«Лицо со шрамом», 1983",2,0,0],["hero-112",2,"Невеста в желтом костюме","«Убить Билла», 2003",2,0,0],["hero-113",2,"Великий Гэтсби","«Великий Гэтсби», 2013",2,0,0],["hero-114",2,"Джордан Белфорт","«Волк с Уолл-стрит», 2013",2,0,0],["hero-115",2,"Док Браун","«Назад в будущее», 1985",2,0,0],["hero-116",2,"Марти Макфлай","«Назад в будущее», 1985",2,0,0],["hero-117",2,"Безумный Шляпник","«Алиса в Стране чудес», 2010",2,0,0],["hero-118",2,"Малефисента","«Малефисента», 2014",2,0,0],["hero-119",2,"Круэлла де Виль","«101 далматинец», 1961",2,0,0],["hero-120",2,"Капитан Крюк","«Питер Пэн», 1953",2,0,0],["hero-121",2,"Фея Динь-Динь","«Питер Пэн», 1953",2,0,0],["hero-122",2,"Робот ВАЛЛ·И","«ВАЛЛ·И», 2008",2,0,0],["hero-123",2,"Крысенок Реми","«Рататуй», 2007",2,0,0],["hero-124",2,"Майк Вазовски","«Корпорация монстров», 2001",2,0,0],["hero-125",2,"Лара Крофт","«Лара Крофт: Расхитительница гробниц», 2001",2,0,0],["hero-126",2,"Хан Соло","«Звездные войны», 1977",2,0,0],["hero-127",2,"Люк Скайуокер","«Звездные войны», 1977",2,0,0],["hero-128",2,"Принцесса Лея","«Звездные войны», 1977",2,0,0],["hero-129",2,"Робот R2-D2","«Звездные войны», 1977",2,0,0],["hero-130",2,"Инопланетянин","«Инопланетянин», 1982",2,0,0],["hero-131",2,"Эркюль Пуаро","«Убийство в „Восточном экспрессе“» и другие экранизации Агаты Кристи",2,0,0],["hero-132",2,"Фантомас","«Фантомас», 1964",2,0,0],["hero-133",2,"Принцесса Фиона","«Шрек», 2001",2,0,0],["hero-134",2,"Хагрид","«Гарри Поттер», 2001–2011",2,0,0],["hero-135",2,"Гермиона Грейнджер","«Гарри Поттер», 2001–2011",2,0,0],["hero-136",2,"Северус Снегг","«Гарри Поттер», 2001–2011",2,0,0],["hero-137",2,"Харли Квинн","«Отряд самоубийц», 2016",2,0,0],["hero-138",2,"Женщина-кошка","«Бэтмен возвращается», 1992",2,0,0],["hero-139",2,"Сенбернар Бетховен","«Бетховен», 1992",2,0,0],["hero-140",2,"Кен","«Барби», 2023",2,0,0],["hero-141",2,"Джек Доусон","«Титаник», 1997",2,0,0],["hero-142",2,"Эдвард Каллен","«Сумерки», 2008",2,0,0],["hero-143",2,"Китнисс Эвердин","«Голодные игры», 2012",2,0,0],["hero-144",2,"Моана","«Моана», 2016",2,0,0],["hero-145",2,"Мистер Мияги","«Парень-каратист», 1984",2,0,0],["hero-146",2,"Конан-варвар","«Конан-варвар», 1982",2,0,0],["hero-147",2,"Майкл Майерс","«Хэллоуин», 1978",3,0,0],["hero-148",2,"Норман Бейтс","«Психо», 1960",3,0,0],["hero-149",2,"Джек Скеллингтон","«Кошмар перед Рождеством», 1993",3,0,0],["hero-150",2,"Джон Доу","«Семь», 1995",3,0,1],["hero-151",2,"Матильда","«Леон», 1994",3,0,0],["hero-152",2,"Винсент Вега","«Криминальное чтиво», 1994",3,0,0],["hero-153",2,"Миа Уоллес","«Криминальное чтиво», 1994",3,0,0],["hero-154",2,"Ганс Ланда","«Бесславные ублюдки», 2009",3,0,0],["hero-155",2,"Чувак Лебовски","«Большой Лебовски», 1998",3,0,0],["hero-156",2,"Эллен Рипли","«Чужой», 1979",3,0,0],["hero-157",2,"Сара Коннор","«Терминатор», 1984",3,0,0],["hero-158",2,"Робот C-3PO","«Звездные войны», 1977",3,0,0],["hero-159",2,"Гизмо","«Гремлины», 1984",3,0,0],["hero-160",2,"Жандарм Крюшо","«Жандарм из Сен-Тропе», 1964",3,0,0],["hero-161",2,"Пингвин","«Бэтмен возвращается», 1992",3,0,0],["hero-162",2,"Доктор Стрэндж","«Доктор Стрэндж», 2016",3,0,0],["hero-163",2,"Рэймонд Бэббит","«Человек дождя», 1988",3,0,0],["hero-164",2,"Мастер Шифу","«Кунг-фу Панда», 2008",3,0,0],["hero-165",2,"Хеллбой","«Хеллбой: Герой из пекла», 2004",3,0,0],["hero-166",2,"Розовая пантера","«Розовая пантера», 1963",3,0,0],["hero-167",2,"Пол Атрейдес","«Дюна», 2021",3,0,0],["hero-168",2,"Трэвис Бикл","«Таксист», 1976",3,0,0],["hero-169",2,"Алекс из «Заводного апельсина»","«Заводной апельсин», 1971",3,0,0],["hero-170",2,"Шурик","«Операция „Ы“ и другие приключения Шурика», 1965",1,1,0],["hero-171",2,"Чебурашка","«Крокодил Гена», 1969",1,1,0],["hero-172",2,"Крокодил Гена","«Крокодил Гена», 1969",1,1,0],["hero-173",2,"Старуха Шапокляк","«Крокодил Гена», 1969",1,1,0],["hero-174",2,"Кот Матроскин","«Трое из Простоквашино», 1978",1,1,0],["hero-175",2,"Почтальон Печкин","«Трое из Простоквашино», 1978",1,1,0],["hero-176",2,"Волк из «Ну, погоди!»","«Ну, погоди!», 1969",1,1,0],["hero-177",2,"Винни-Пух","«Винни-Пух», 1969",1,1,0],["hero-178",2,"Пятачок","«Винни-Пух», 1969",1,1,0],["hero-179",2,"Карлсон","«Малыш и Карлсон», 1968",1,1,0],["hero-180",2,"Кот Леопольд","«Приключения кота Леопольда», 1975",1,1,0],["hero-181",2,"Попугай Кеша","«Возвращение блудного попугая», 1984",1,1,0],["hero-182",2,"Буратино","«Приключения Буратино», 1975",1,1,0],["hero-183",2,"Карабас-Барабас","«Приключения Буратино», 1975",1,1,0],["hero-184",2,"Лиса Алиса и кот Базилио","«Приключения Буратино», 1975",1,1,0],["hero-185",2,"Старик Хоттабыч","«Старик Хоттабыч», 1956",1,1,0],["hero-186",2,"Баба-яга","«Морозко», 1964",1,1,0],["hero-187",2,"Кощей Бессмертный","«Кащей Бессмертный», 1944",1,1,0],["hero-188",2,"Емеля на печи","«По щучьему велению», 1938",1,1,0],["hero-189",2,"Илья Муромец","«Илья Муромец и Соловей-Разбойник», 2007",1,1,0],["hero-190",2,"Алеша Попович","«Алеша Попович и Тугарин Змей», 2004",1,1,0],["hero-191",2,"Змей Горыныч","«Добрыня Никитич и Змей Горыныч», 2006",1,1,0],["hero-192",2,"Маша из «Маши и Медведя»","мультсериал «Маша и Медведь», с 2009",1,1,0],["hero-193",2,"Ежик в тумане","«Ежик в тумане», 1975",1,1,0],["hero-194",2,"Волк из «Жил-был пес»","«Жил-был пес», 1982",1,1,0],["hero-195",2,"Домовенок Кузя","«Дом для Кузьки», 1984",1,1,0],["hero-196",2,"Капитан Врунгель","«Приключения капитана Врунгеля», 1976",1,1,0],["hero-197",2,"Остап Бендер","«12 стульев», 1971",1,1,0],["hero-198",2,"Штирлиц","«Семнадцать мгновений весны», 1973",1,1,0],["hero-199",2,"Глеб Жеглов","«Место встречи изменить нельзя», 1979",1,1,0],["hero-200",2,"Д'Артаньян","«Д'Артаньян и три мушкетера», 1978",1,1,0],["hero-201",2,"Данила Багров","«Брат», 1997",1,1,0],["hero-202",2,"Саша Белый","сериал «Бригада», 2002",1,1,0],["hero-203",2,"Женя Лукашин","«Ирония судьбы, или С легким паром!», 1975",1,1,0],["hero-204",2,"Семен Семенович Горбунков","«Бриллиантовая рука», 1968",1,1,0],["hero-205",2,"Трус, Балбес и Бывалый","«Кавказская пленница», 1967",1,1,0],["hero-206",2,"Иван Грозный из «Ивана Васильевича»","«Иван Васильевич меняет профессию», 1973",1,1,0],["hero-207",2,"Доцент","«Джентльмены удачи», 1971",1,1,0],["hero-208",2,"Красноармеец Сухов","«Белое солнце пустыни», 1969",1,1,0],["hero-209",2,"Профессор Преображенский","«Собачье сердце», 1988",1,1,0],["hero-210",2,"Шариков","«Собачье сердце», 1988",1,1,0],["hero-211",2,"Кот Бегемот","«Мастер и Маргарита», 2005",1,1,0],["hero-212",2,"Электроник","«Приключения Электроника», 1979",1,1,0],["hero-213",2,"Алиса Селезнева","«Гостья из будущего», 1984",1,1,0],["hero-214",2,"Чапаев","«Чапаев», 1934",1,1,0],["hero-215",2,"Маугли","«Маугли», 1973",1,1,0],["hero-216",2,"Снежная королева","«Снежная королева», 1957",1,1,0],["hero-217",2,"Царевна-лягушка","«Царевна-лягушка», 1954",1,1,0],["hero-218",2,"Панночка из «Вия»","«Вий», 1967",1,1,0],["hero-219",2,"Водяной","«Летучий корабль», 1979",1,1,0],["hero-220",2,"Мужик из «Падал прошлогодний снег»","«Падал прошлогодний снег», 1983",1,1,0],["hero-221",2,"Лунтик","мультсериал «Лунтик», с 2006",1,1,0],["hero-222",2,"Фиксики","мультсериал «Фиксики», с 2010",1,1,0],["hero-223",2,"Котенок Гав","«Котенок по имени Гав», 1976",1,1,0],["hero-224",2,"Удав из «38 попугаев»","«38 попугаев», 1976",1,1,0],["hero-225",2,"Медвежонок Умка","«Умка», 1969",1,1,0],["hero-226",2,"Мамонтенок","«Мама для мамонтенка», 1981",1,1,0],["hero-227",2,"Львенок и Черепаха","«Как Львенок и Черепаха песню пели», 1974",1,1,0],["hero-228",2,"Незнайка","мультфильмы о Незнайке",1,1,0],["hero-229",2,"Бармалей","«Айболит-66», 1966",1,1,0],["hero-230",2,"Доктор Айболит","«Айболит-66», 1966",1,1,0],["hero-231",2,"Пес Шарик","«Трое из Простоквашино», 1978",2,1,0],["hero-232",2,"Дядя Федор","«Трое из Простоквашино», 1978",2,1,0],["hero-233",2,"Заяц из «Ну, погоди!»","«Ну, погоди!», 1969",2,1,0],["hero-234",2,"Ослик Иа","«Винни-Пух и день забот», 1972",2,1,0],["hero-235",2,"Малыш","«Малыш и Карлсон», 1968",2,1,0],["hero-236",2,"Фрекен Бок","«Карлсон вернулся», 1970",2,1,0],["hero-237",2,"Мыши из «Кота Леопольда»","«Приключения кота Леопольда», 1975",2,1,0],["hero-238",2,"Трубадур","«Бременские музыканты», 1969",2,1,0],["hero-239",2,"Мальвина","«Приключения Буратино», 1975",2,1,0],["hero-240",2,"Пьеро","«Приключения Буратино», 1975",2,1,0],["hero-241",2,"Морозко","«Морозко», 1964",2,1,0],["hero-242",2,"Добрыня Никитич","«Добрыня Никитич и Змей Горыныч», 2006",2,1,0],["hero-243",2,"Конь Юлий","мультфильмы о трех богатырях, с 2004",2,1,0],["hero-244",2,"Медведь из «Маши и Медведя»","мультсериал «Маша и Медведь», с 2009",2,1,0],["hero-245",2,"Крош","мультсериал «Смешарики», с 2004",2,1,0],["hero-246",2,"Вовка","«Вовка в Тридевятом царстве», 1965",2,1,0],["hero-247",2,"Барон Мюнхгаузен","«Тот самый Мюнхгаузен», 1979",2,1,0],["hero-248",2,"Киса Воробьянинов","«12 стульев», 1971",2,1,0],["hero-249",2,"Шарапов","«Место встречи изменить нельзя», 1979",2,1,0],["hero-250",2,"Ипполит","«Ирония судьбы, или С легким паром!», 1975",2,1,0],["hero-251",2,"Калугина (Мымра)","«Служебный роман», 1977",2,1,0],["hero-252",2,"Лелик","«Бриллиантовая рука», 1968",2,1,0],["hero-253",2,"Геша Козодоев","«Бриллиантовая рука», 1968",2,1,0],["hero-254",2,"Нина, спортсменка и комсомолка","«Кавказская пленница», 1967",2,1,0],["hero-255",2,"Товарищ Саахов","«Кавказская пленница», 1967",2,1,0],["hero-256",2,"Жорж Милославский","«Иван Васильевич меняет профессию», 1973",2,1,0],["hero-257",2,"Управдом Бунша","«Иван Васильевич меняет профессию», 1973",2,1,0],["hero-258",2,"Косой","«Джентльмены удачи», 1971",2,1,0],["hero-259",2,"Хмырь","«Джентльмены удачи», 1971",2,1,0],["hero-260",2,"Таможенник Верещагин","«Белое солнце пустыни», 1969",2,1,0],["hero-261",2,"Гюльчатай","«Белое солнце пустыни», 1969",2,1,0],["hero-262",2,"Воланд","«Мастер и Маргарита», 2005",2,1,0],["hero-263",2,"Ихтиандр","«Человек-амфибия», 1961",2,1,0],["hero-264",2,"Петька","«Чапаев», 1934",2,1,0],["hero-265",2,"Анка-пулеметчица","«Чапаев», 1934",2,1,0],["hero-266",2,"Мимино","«Мимино», 1977",2,1,0],["hero-267",2,"Афоня","«Афоня», 1975",2,1,0],["hero-268",2,"Гоша","«Москва слезам не верит», 1979",2,1,0],["hero-269",2,"Юрий Деточкин","«Берегись автомобиля», 1966",2,1,0],["hero-270",2,"Пантера Багира","«Маугли», 1973",2,1,0],["hero-271",2,"Удав Каа","«Маугли», 1973",2,1,0],["hero-272",2,"Тигр Шер-Хан","«Маугли», 1973",2,1,0],["hero-273",2,"Кай и Герда","«Снежная королева», 1957",2,1,0],["hero-274",2,"Хома Брут","«Вий», 1967",2,1,0],["hero-275",2,"Бабки-ежки","«Летучий корабль», 1979",2,1,0],["hero-276",2,"Пластилиновая ворона","«Пластилиновая ворона», 1981",2,1,0],["hero-277",2,"Майор Гром","«Майор Гром: Чумной Доктор», 2021",2,1,0],["hero-278",2,"Серый Волк","«Иван Царевич и Серый Волк», 2011",2,1,0],["hero-279",2,"Лев Бонифаций","«Каникулы Бонифация», 1965",2,1,0],["hero-280",2,"Чиполлино","«Чиполлино», 1961",2,1,0],["hero-281",2,"Мойдодыр","«Мойдодыр», 1954",2,1,0],["hero-282",2,"Щелкунчик","«Щелкунчик», 1973",2,1,0],["hero-283",2,"Чудище из «Аленького цветочка»","«Аленький цветочек», 1952",2,1,0],["hero-284",2,"Царь из «Летучего корабля»","«Летучий корабль», 1979",2,1,0],["hero-285",2,"Барбоскины","мультсериал «Барбоскины», с 2011",2,1,0],["hero-286",2,"Атаманша","«Бременские музыканты», 1969",3,1,0],["hero-287",2,"Надя Шевелева","«Ирония судьбы, или С легким паром!», 1975",3,1,0],["hero-288",2,"Новосельцев","«Служебный роман», 1977",3,1,0],["hero-289",2,"Горбатый","«Место встречи изменить нельзя», 1979",3,1,0],["hero-290",2,"Нюша","мультсериал «Смешарики», с 2004",3,1,0],["hero-291",2,"Синьор Помидор","«Чиполлино», 1961",3,1,0],["hero-292",2,"Паратов","«Жестокий романс», 1984",3,1,0],["hero-293",2,"Мюллер","«Семнадцать мгновений весны», 1973",3,1,0],["hero-294",2,"Абдулла","«Белое солнце пустыни», 1969",3,1,0],["hero-295",2,"Шпак","«Иван Васильевич меняет профессию», 1973",3,1,0],["hero-296",2,"Шелленберг","«Семнадцать мгновений весны», 1973",3,1,0],["hero-297",2,"Скрипач из «Кин-дза-дза!»","«Кин-дза-дза!», 1986",3,1,0],["hero-298",2,"Тося Кислицына","«Девчата», 1961",3,1,0],["hero-299",2,"Хоботов","«Покровские ворота», 1982",3,1,0],["scene-001",3,"Нео уклоняется от пуль, прогибаясь назад","«Матрица», 1999",1,0,0],["scene-002",3,"Роза и Джек на носу корабля раскинули руки","«Титаник», 1997",1,0,0],["scene-003",3,"Форрест Гамп бежит через всю Америку","«Форрест Гамп», 1994",1,0,0],["scene-004",3,"Терминатор опускается в лаву и показывает большой палец","«Терминатор 2: Судный день», 1991",1,0,0],["scene-005",3,"Кинг-Конг на крыше небоскреба отбивается от самолетов","«Кинг-Конг», 1933 и 2005",1,0,0],["scene-006",3,"Платье Мэрилин Монро взлетает над решеткой метро","«Зуд седьмого года», 1955",1,0,0],["scene-007",3,"Кевин хлопает себя по щекам лосьоном и кричит","«Один дома», 1990",1,0,0],["scene-008",3,"Кевин расставляет ловушки для грабителей","«Один дома», 1990",1,0,0],["scene-009",3,"Девочка вылезает из телевизора","«Звонок», 2002",1,0,0],["scene-010",3,"Индиана Джонс убегает от огромного каменного шара","«Индиана Джонс: В поисках утраченного ковчега», 1981",1,0,0],["scene-011",3,"Мальчик с инопланетянином летят на велосипеде на фоне луны","«Инопланетянин», 1982",1,0,0],["scene-012",3,"Акула подплывает к ничего не подозревающей пловчихе","«Челюсти», 1975",1,0,0],["scene-013",3,"Рокки взбегает по ступеням и вскидывает руки","«Рокки», 1976",1,0,0],["scene-014",3,"Человек-паук целуется, вися вниз головой","«Человек-паук», 2002",1,0,0],["scene-015",3,"Танос щелкает пальцами в перчатке","«Мстители: Война бесконечности», 2018",1,0,0],["scene-016",3,"Голлум спорит сам с собой","«Властелин колец: Две крепости», 2002",1,0,0],["scene-017",3,"Гэндальф на мосту: «Ты не пройдешь!»","«Властелин колец: Братство кольца», 2001",1,0,0],["scene-018",3,"Гарри Поттер проходит сквозь стену на платформу 9¾","«Гарри Поттер и философский камень», 2001",1,0,0],["scene-019",3,"Симба, Тимон и Пумба идут по бревну с песней «Акуна Матата»","«Король Лев», 1994",1,0,0],["scene-020",3,"Рафики поднимает львенка Симбу над скалой","«Король Лев», 1994",1,0,0],["scene-021",3,"Эльза строит ледяной дворец под «Отпусти и забудь»","«Холодное сердце», 2013",1,0,0],["scene-022",3,"Белка Скрат гоняется за желудем","«Ледниковый период», 2002",1,0,0],["scene-023",3,"Пингвины: «Улыбаемся и машем»","«Мадагаскар», 2005",1,0,0],["scene-024",3,"Кот в сапогах делает огромные жалобные глаза","«Шрек 2», 2004",1,0,0],["scene-025",3,"Дом взлетает на воздушных шариках","«Вверх», 2009",1,0,0],["scene-026",3,"Мистер Бин с индейкой на голове","«Счастливого Рождества, мистер Бин», 1992",1,0,0],["scene-027",3,"Маска крутится как торнадо","«Маска», 1994",1,0,0],["scene-028",3,"Ди Каприо поднимает бокал с шампанским","«Великий Гэтсби», 2013",1,0,0],["scene-029",3,"Джокер танцует на длинной лестнице","«Джокер», 2019",1,0,0],["scene-030",3,"Спартанец: «Это Спарта!» — и пинок в колодец","«300 спартанцев», 2006",1,0,0],["scene-031",3,"Поддержка над головой в воде и на сцене","«Грязные танцы», 1987",1,0,0],["scene-032",3,"Пеннивайз выглядывает из сточной канавы с шариком","«Оно», 2017",1,0,0],["scene-033",3,"Хатико ждет хозяина на станции","«Хатико: Самый верный друг», 2009",1,0,0],["scene-034",3,"Морфеус предлагает красную и синюю таблетки","«Матрица», 1999",1,0,0],["scene-035",3,"Мэри Поппинс прилетает на зонтике","«Мэри Поппинс», 1964",1,0,0],["scene-036",3,"Том Круз висит на тросах над полом хранилища","«Миссия невыполнима», 1996",1,0,0],["scene-037",3,"Машина превращается в робота","«Трансформеры», 2007",1,0,0],["scene-038",3,"Уэнсдей Аддамс странно танцует на балу","«Уэнсдей», 2022",1,0,0],["scene-039",3,"Миньоны поют песню «Банана»","«Гадкий я 2», 2013",1,0,0],["scene-040",3,"Вейдер протягивает руку Люку: «Я твой отец»","«Звездные войны: Империя наносит ответный удар», 1980",1,0,0],["scene-041",3,"Дон Корлеоне гладит кота","«Крестный отец», 1972",2,0,0],["scene-042",3,"Мия и Себастьян танцуют на холме в сумерках","«Ла-Ла Ленд», 2016",2,0,0],["scene-043",3,"Люк Скайуокер срывается в шахту","«Звездные войны: Империя наносит ответный удар», 1980",2,0,0],["scene-044",3,"Джек замерзает в океане, Роуз лежит на двери","«Титаник», 1997",1,0,0],["scene-045",3,"Форрест сидит на скамейке с коробкой конфет","«Форрест Гамп», 1994",2,0,0],["scene-046",3,"Сцена в душе","«Психо», 1960",2,0,0],["scene-047",3,"Джек просовывает лицо в дыру, прорубленную топором","«Сияние», 1980",2,0,0],["scene-048",3,"Мия и Винсент танцуют твист","«Криминальное чтиво», 1994",2,0,0],["scene-049",3,"Невеста в желтом костюме дерется катаной","«Убить Билла», 2003",2,0,0],["scene-050",3,"Стакан воды дрожит от шагов тираннозавра","«Парк Юрского периода», 1993",2,0,0],["scene-051",3,"Марти играет на гитаре на школьном балу","«Назад в будущее», 1985",2,0,0],["scene-052",3,"Док Браун ловит молнию с часовой башни","«Назад в будущее», 1985",2,0,0],["scene-053",3,"Рокки бьет по мясным тушам","«Рокки», 1976",2,0,0],["scene-054",3,"Человек-паук останавливает поезд","«Человек-паук 2», 2004",2,0,0],["scene-055",3,"Капитан Америка поднимает молот Тора","«Мстители: Финал», 2019",2,0,0],["scene-056",3,"Халк швыряет Локи об пол","«Мстители», 2012",2,0,0],["scene-057",3,"Фродо надевает кольцо и исчезает","«Властелин колец: Братство кольца», 2001",2,0,0],["scene-058",3,"Гарри Поттер ловит снитч ртом","«Гарри Поттер и философский камень», 2001",2,0,0],["scene-059",3,"Джек Воробей сходит с тонущей лодки прямо на пристань","«Пираты Карибского моря», 2003",2,0,0],["scene-060",3,"Чудовище и Белль танцуют вальс","«Красавица и чудовище», 1991",2,0,0],["scene-061",3,"Осел без конца спрашивает: «Мы уже приехали?»","«Шрек 2», 2004",2,0,0],["scene-062",3,"Крысенок управляет поваром, дергая его за волосы","«Рататуй», 2007",2,0,0],["scene-063",3,"Эйс Вентура вылезает из механического носорога","«Эйс Вентура 2: Когда зовет природа», 1995",2,0,0],["scene-064",3,"Брюс раздвигает томатный суп, как море","«Брюс Всемогущий», 2003",2,0,0],["scene-065",3,"Брокер ползет к машине, не владея телом","«Волк с Уолл-стрит», 2013",2,0,0],["scene-066",3,"Джокер в костюме медсестры взрывает больницу","«Темный рыцарь», 2008",2,0,0],["scene-067",3,"Волчок крутится на столе: сон или явь?","«Начало», 2010",2,0,0],["scene-068",3,"Энди стоит под дождем, раскинув руки после побега","«Побег из Шоушенка», 1994",2,0,0],["scene-069",3,"Гладиатор бросает меч: «Вы не удивлены?»","«Гладиатор», 2000",2,0,0],["scene-070",3,"Леон и Матильда идут с цветком в горшке","«Леон», 1994",2,0,0],["scene-071",3,"Лилу прыгает с небоскреба","«Пятый элемент», 1997",2,0,0],["scene-072",3,"Гончарный круг вдвоем","«Призрак», 1990",2,0,0],["scene-073",3,"Героиня на допросе перекладывает ногу на ногу","«Основной инстинкт», 1992",2,0,0],["scene-074",3,"Тони Монтана с автоматом: «Поздоровайся с моим маленьким другом!»","«Лицо со шрамом», 1983",2,0,0],["scene-075",3,"Чужой вырывается из груди","«Чужой», 1979",2,0,0],["scene-076",3,"Чарли Чаплин застревает в шестеренках","«Новые времена», 1936",2,0,0],["scene-077",3,"Танец под дождем с зонтом на фонарном столбе","«Поющие под дождем», 1952",2,0,0],["scene-078",3,"Траволта в белом костюме танцует диско","«Лихорадка субботнего вечера», 1977",2,0,0],["scene-079",3,"Супермен переодевается в телефонной будке","«Супермен», 1978",1,0,0],["scene-080",3,"Девочка раздувается в огромную чернику","«Чарли и шоколадная фабрика», 2005",2,0,0],["scene-081",3,"Джеймс Бонд стреляет в заставке сквозь ствол пистолета","фильмы о Джеймсе Бонде",2,0,0],["scene-082",3,"Полицейский ползет по вентиляционной шахте","«Крепкий орешек», 1988",2,0,0],["scene-083",3,"Форрест играет в пинг-понг","«Форрест Гамп», 1994",2,0,0],["scene-084",3,"Ступни Барби остаются на носочках без каблуков","«Барби», 2023",2,0,0],["scene-085",3,"Тоторо под дождем на автобусной остановке с зонтом","«Мой сосед Тоторо», 1988",2,0,0],["scene-086",3,"Кукла на трехколесном велосипеде появляется на экране","«Пила», 2004",2,0,0],["scene-087",3,"Убийца в маске звонит жертве по телефону","«Крик», 1996",2,0,0],["scene-088",3,"Мальчик шепчет: «Я вижу мертвых людей»","«Шестое чувство», 1999",2,0,0],["scene-089",3,"Эдвард стрижет кусты ножницами-руками","«Эдвард Руки-ножницы», 1990",2,0,0],["scene-090",3,"Зефирный великан шагает по Нью-Йорку","«Охотники за привидениями», 1984",2,0,0],["scene-091",3,"Дрисс зажигательно танцует на дне рождения","«1+1», 2011",2,0,0],["scene-092",3,"Джек рисует Роуз","«Титаник», 1997",2,0,0],["scene-093",3,"Джейк приручает летающего икрана","«Аватар», 2009",2,0,0],["scene-094",3,"Китнисс поднимает три пальца в знак прощания","«Голодные игры», 2012",2,0,0],["scene-095",3,"Эдвард сверкает на солнце","«Сумерки», 2008",2,0,0],["scene-096",3,"Ганнибал Лектер в маске на тележке","«Молчание ягнят», 1991",3,0,0],["scene-097",3,"Рассказчик избивает сам себя в кабинете начальника","«Бойцовский клуб», 1999",3,0,1],["scene-098",3,"Детектив в поле: «Что в коробке?!»","«Семь», 1995",3,0,1],["scene-099",3,"Близняшки в коридоре отеля","«Сияние», 1980",3,0,0],["scene-100",3,"Мальчик катается по коридорам отеля на трехколесном велосипеде","«Сияние», 1980",3,0,0],["scene-101",3,"Укол адреналина прямо в сердце","«Криминальное чтиво», 1994",3,0,0],["scene-102",3,"Невеста пытается пошевелить большим пальцем ноги","«Убить Билла», 2003",3,0,0],["scene-103",3,"Таксист у зеркала: «Ты это мне говоришь?»","«Таксист», 1976",3,0,0],["scene-104",3,"Девочка спускается по лестнице «мостиком»","«Изгоняющий дьявола», 1973",3,0,0],["scene-105",3,"Танец булочек на вилках","«Золотая лихорадка», 1925",3,0,0],["scene-106",3,"Человек висит на стрелке часов над улицей","«Наконец в безопасности!», 1923",3,0,0],["scene-107",3,"Стая ворон собирается на детской площадке","«Птицы», 1963",3,0,0],["scene-108",3,"Магистр Йода поднимает истребитель из болота","«Звездные войны: Империя наносит ответный удар», 1980",3,0,0],["scene-109",3,"Обезьяна подбрасывает кость, и та становится кораблем","«Космическая одиссея 2001 года», 1968",3,0,0],["scene-110",3,"Вертолеты атакуют под «Полет валькирий»","«Апокалипсис сегодня», 1979",3,0,0],["scene-111",3,"Гитарист с огнеметом на грузовике","«Безумный Макс: Дорога ярости», 2015",3,0,0],["scene-112",3,"Родители Тихиро превращаются в свиней","«Унесенные призраками», 2001",3,0,0],["scene-113",3,"Кожаное лицо танцует с бензопилой на закате","«Техасская резня бензопилой», 1974",3,0,0],["scene-114",3,"Семья ходит босиком, чтобы не издать ни звука","«Тихое место», 2018",3,0,0],["scene-115",3,"Герой проваливается в «утонувшее место» под звон ложки о чашку","«Прочь», 2017",3,0,0],["scene-116",3,"Гизмо случайно намочили водой","«Гремлины», 1984",3,0,0],["scene-117",3,"Семья прячется под столом, пока хозяева на диване","«Паразиты», 2019",3,0,0],["scene-118",3,"Амели пускает камешки по воде канала","«Амели», 2001",3,0,0],["scene-119",3,"Город складывается пополам над героями","«Начало», 2010",3,0,0],["scene-120",3,"Купер плачет, смотря видеописьма от детей","«Интерстеллар», 2014",3,0,0],["scene-121",3,"Пьяного Лукашина отправляют в Ленинград вместо друга","«Ирония судьбы, или С легким паром!», 1975",1,1,0],["scene-122",3,"Ипполит в пальто и шапке стоит под душем","«Ирония судьбы, или С легким паром!», 1975",1,1,0],["scene-123",3,"Друзья парятся в бане 31 декабря","«Ирония судьбы, или С легким паром!», 1975",1,1,0],["scene-124",3,"Горбунков поскальзывается на корке арбуза","«Бриллиантовая рука», 1968",1,1,0],["scene-125",3,"Горбунков с загипсованной рукой","«Бриллиантовая рука», 1968",1,1,0],["scene-126",3,"Геша танцует и поет про остров невезения","«Бриллиантовая рука», 1968",1,1,0],["scene-127",3,"Трус, Балбес и Бывалый уносят Нину в спальном мешке","«Кавказская пленница», 1967",1,1,0],["scene-128",3,"Шурик воспитывает хулигана Федю на стройке","«Операция „Ы“ и другие приключения Шурика», 1965",1,1,0],["scene-129",3,"Иван Грозный попадает в квартиру советского изобретателя","«Иван Васильевич меняет профессию», 1973",1,1,0],["scene-130",3,"Гюльчатай открывает личико","«Белое солнце пустыни», 1969",1,1,0],["scene-131",3,"Калугина учится походке у секретарши Верочки","«Служебный роман», 1977",1,1,0],["scene-132",3,"Василий гоняет голубей на крыше","«Любовь и голуби», 1984",1,1,0],["scene-133",3,"Данила в наушниках идет по Петербургу","«Брат», 1997",1,1,0],["scene-134",3,"Остап и Киса потрошат стулья","«12 стульев», 1971",1,1,0],["scene-135",3,"«Тепло ли тебе, девица?» — Настенька замерзает под елкой","«Морозко», 1964",1,1,0],["scene-136",3,"Панночка летает в гробу","«Вий», 1967",1,1,0],["scene-137",3,"Волк гонится за Зайцем на мотоцикле","«Ну, погоди!», 1969",1,1,0],["scene-138",3,"Волк — Дед Мороз, Заяц — Снегурочка на елке","«Ну, погоди!», выпуск 8, 1974",1,1,0],["scene-139",3,"Волк на свадьбе: «Щас спою!»","«Жил-был пес», 1982",1,1,0],["scene-140",3,"Мужик рубит елку: «Маловато будет!»","«Падал прошлогодний снег», 1983",1,1,0],["scene-141",3,"Ежик в тумане зовет Лошадку","«Ежик в тумане», 1975",1,1,0],["scene-142",3,"Винни-Пух летит на шарике к пчелам","«Винни-Пух», 1969",1,1,0],["scene-143",3,"Винни-Пух застрял в норе у Кролика","«Винни-Пух идет в гости», 1971",1,1,0],["scene-144",3,"Карлсон в простыне пугает домомучительницу","«Карлсон вернулся», 1970",1,1,0],["scene-145",3,"Бременские музыканты строят живую пирамиду","«Бременские музыканты», 1969",1,1,0],["scene-146",3,"Водяной поет на болоте","«Летучий корабль», 1979",1,1,0],["scene-147",3,"Буратино протыкает носом нарисованный очаг","«Приключения Буратино», 1975",1,1,0],["scene-148",3,"Маргарита летит на метле над Москвой","«Мастер и Маргарита», 2005",1,1,0],["scene-149",3,"Пес Барбос бежит с горящим динамитом","«Пес Барбос и необычный кросс», 1961",1,1,0],["scene-150",3,"Чебурашка все время падает","«Крокодил Гена», 1969",1,1,0],["scene-151",3,"Крокодил Гена играет на гармошке","«Крокодил Гена», 1969",1,1,0],["scene-152",3,"Мамонтенок плывет на льдине к маме","«Мама для мамонтенка», 1981",1,1,0],["scene-153",3,"Удава измеряют в попугаях","«38 попугаев», 1976",1,1,0],["scene-154",3,"Мушкетеры скрещивают шпаги: «Один за всех!»","«Д'Артаньян и три мушкетера», 1978",1,1,0],["scene-155",3,"Шурик и студентка читают один конспект и не замечают ничего вокруг","«Операция „Ы“ и другие приключения Шурика», 1965",2,1,0],["scene-156",3,"Беглецы вылезают из цистерны с цементом","«Джентльмены удачи», 1971",2,1,0],["scene-157",3,"Сухов мысленно пишет письмо Катерине Матвеевне","«Белое солнце пустыни», 1969",2,1,0],["scene-158",3,"Сухов откапывает из песка Саида","«Белое солнце пустыни», 1969",2,1,0],["scene-159",3,"Штирлиц спит в машине ровно двадцать минут","«Семнадцать мгновений весны», 1973",2,1,0],["scene-160",3,"Жеглов подкидывает кошелек карманнику Кирпичу","«Место встречи изменить нельзя», 1979",2,1,0],["scene-161",3,"Гоша разбирается с хулиганами на пикнике","«Москва слезам не верит», 1979",2,1,0],["scene-162",3,"Шариков играет на балалайке","«Собачье сердце», 1988",2,1,0],["scene-163",3,"Приветствие «Ку!» с приседанием","«Кин-дза-дза!», 1986",2,1,0],["scene-164",3,"Иванушка с медвежьей головой","«Морозко», 1964",2,1,0],["scene-165",3,"Почтальон Печкин получает велосипед","«Трое из Простоквашино», 1978",1,1,0],["scene-166",3,"Кот Леопольд пьет озверин","«Месть кота Леопольда», 1975",2,1,0],["scene-167",3,"Удав Каа гипнотизирует бандерлогов","«Маугли», 1973",2,1,0],["scene-168",3,"Доктор Ливси идет и хохочет","«Остров сокровищ», 1988",2,1,0],["scene-169",3,"Алиса убегает с миелофоном","«Гостья из будущего», 1984",2,1,0],["scene-170",3,"Электроник встречает своего двойника Сыроежкина","«Приключения Электроника», 1979",2,1,0],["scene-171",3,"Шурик едет верхом на осле","«Кавказская пленница», 1967",2,1,0],["scene-172",3,"Шурик плачет над тостом про гордую птичку","«Кавказская пленница», 1967",1,1,0],["scene-173",3,"Шерлок Холмс играет на скрипке","«Приключения Шерлока Холмса и доктора Ватсона», 1979",2,1,0],["scene-174",3,"Последние три секунды финала: штрафные броски","«Движение вверх», 2017",2,1,0],["scene-175",3,"Мажор просыпается крепостным в XIX веке","«Холоп», 2019",2,1,0],["scene-176",3,"Корову везут в бомбовом отсеке самолета","«Особенности национальной охоты», 1995",2,1,0],["scene-177",3,"Ихтиандр плывет верхом на дельфине","«Человек-амфибия», 1961",2,1,0],["scene-178",3,"Барон Мюнхгаузен вытаскивает себя за волосы из болота","барон Мюнхгаузен, книга и экранизации",2,1,0],["scene-179",3,"Котенок Гав и Шарик вместе боятся грозы на чердаке","«Котенок по имени Гав», 1976",2,1,0],["scene-180",3,"Медведица поет колыбельную Умке","«Умка», 1969",2,1,0],["scene-181",3,"Самолет взлетает с рушащейся полосы","«Экипаж», 1979",2,1,0],["scene-182",3,"Деточкин угоняет машину","«Берегись автомобиля», 1966",2,1,0],["scene-183",3,"Снежная королева увозит Кая в санях","«Снежная королева», 1957",2,1,0],["scene-184",3,"Бонифаций показывает фокусы африканским детям","«Каникулы Бонифация», 1965",2,1,0],["scene-185",3,"Кот Бегемот едет в трамвае","«Мастер и Маргарита», 2005",2,1,0],["scene-186",3,"Буквы «П» и «О» отваливаются от названия яхты «Победа»","«Приключения капитана Врунгеля», 1976",2,1,0],["scene-187",3,"Варежка превращается в щенка","«Варежка», 1967",2,1,0],["scene-188",3,"Остап дает сеанс одновременной игры в шахматы","«12 стульев»",2,1,0],["scene-189",3,"Бунша в царских одеждах принимает послов","«Иван Васильевич меняет профессию», 1973",2,1,0],["scene-190",3,"Встреча Штирлица с женой в кафе — без единого слова","«Семнадцать мгновений весны», 1973",3,1,0],["scene-191",3,"Профессор Преображенский поет «От Севильи до Гренады»","«Собачье сердце», 1988",3,1,0],["scene-192",3,"Мимино звонит в Телави, а попадает в Тель-Авив","«Мимино», 1977",3,1,0],["scene-193",3,"Тося режет хлеб, прижав буханку к груди","«Девчата», 1961",3,1,0],["scene-194",3,"Сталкер бросает гайку с бинтом","«Сталкер», 1979",3,1,0],["scene-195",3,"Детская коляска катится вниз по лестнице","«Броненосец „Потемкин“», 1925",3,1,0]];
+
+const CATS = [
+  { name: 'Фильмы', label: 'Фильм' },
+  { name: 'Актеры и режиссеры', label: 'Актер или режиссер' },
+  { name: 'Персонажи', label: 'Персонаж' },
+  { name: 'Культовые сцены', label: 'Культовая сцена' },
+];
+const DIFFS = [[1, 'Легко'], [2, 'Средне'], [3, 'Сложно']];
+// Как показывать: выпадает случайно на каждый билет из выбранных в настройках.
+const WAYS = [
+  { name: 'Жесты', rule: 'Только жестами — без слов и звуков',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4.5a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v7.5c0 4-2.7 6.5-6 6.5-2.4 0-4-1.2-5.3-3.3L3.6 13a1.5 1.5 0 0 1 2.5-1.6L8 14"/></svg>' },
+  { name: 'Голос', rule: 'Объясняйте словами, но не называйте слова из задания',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg>' },
+  { name: 'Рисунок', rule: 'Рисуйте на бумаге — без букв и цифр',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.2-4.6L15.6 5a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L8.6 18.8zM13.5 7l3.5 3.5"/></svg>' },
+];
+const KEY = 'kinoshnaya-krokodil-v1';
+const DEFAULTS = {
+  mode: 'free', teams: ['Команда 1', 'Команда 2'], cats: [0, 1, 2, 3], diffs: [1, 2],
+  origin: 'all', timer: 60, skips: 1, hint: true, rounds: 5, sound: true, ways: [0, 1, 2],
+};
+
+// ---------- Хранение на устройстве ----------
+function load() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (raw && raw.settings) return raw;
+  } catch (e) { /* приватный режим и т.п. — работаем без памяти */ }
+  return null;
+}
+const saved = load();
+const settings = Object.assign({}, DEFAULTS, saved && saved.settings);
+let game = saved && saved.game && saved.game.started ? saved.game : null;
+function persist() {
+  try { localStorage.setItem(KEY, JSON.stringify({ settings, game })); } catch (e) { /* без памяти */ }
+}
+
+function newGame() {
+  const teams = settings.mode === 'team' ? settings.teams.map((t, i) => t.trim() || 'Команда ' + (i + 1)) : [];
+  game = {
+    started: true, mode: settings.mode, teams, scores: teams.map(() => 0),
+    used: [], ticketNo: 0, turn: 0, round: 1, guessed: 0, turns: 0, last: null, lastResult: null, over: false,
+  };
+  persist();
+}
+
+// ---------- Колода ----------
+function pool() {
+  return DATA.filter((d) => settings.cats.includes(d[1]) && settings.diffs.includes(d[4]) &&
+    (settings.origin === 'all' || (settings.origin === 'ours') === (d[5] === 1)));
+}
+function remaining() {
+  const used = new Set(game ? game.used : []);
+  return pool().filter((d) => !used.has(d[0]));
+}
+function randomIndex(n) {
+  try { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; } catch (e) { return Math.floor(Math.random() * n); }
+}
+function drawCard() {
+  const left = remaining();
+  if (!left.length) return null;
+  const card = left[randomIndex(left.length)];
+  game.used.push(card[0]);
+  game.ticketNo += 1;
+  persist();
+  const ways = settings.ways.length ? settings.ways : [0];
+  return { card, no: game.ticketNo, way: ways[randomIndex(ways.length)] };
+}
+
+// ---------- Звук, вибрация, экран ----------
+let audio = null;
+function ac() {
+  if (!settings.sound) return null;
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === 'suspended') audio.resume();
+    return audio;
+  } catch (e) { return null; }
+}
+function tone(freq, start, dur, type, vol) {
+  const a = ac(); if (!a) return;
+  const o = a.createOscillator(), g = a.createGain(), t = a.currentTime + start;
+  o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol || 0.25, t + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+function rustle() {
+  const a = ac(); if (!a) return;
+  const len = Math.floor(a.sampleRate * 0.16), buf = a.createBuffer(1, len, a.sampleRate), ch = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  f.type = 'bandpass'; f.frequency.value = 2600; g.gain.value = 0.35;
+  src.buffer = buf; src.connect(f).connect(g).connect(a.destination); src.start();
+}
+const sfx = {
+  tick: () => tone(1250, 0, 0.05, 'square', 0.12),
+  end: () => { tone(440, 0, 0.22, 'sawtooth', 0.22); tone(440, 0.28, 0.22, 'sawtooth', 0.22); tone(330, 0.56, 0.6, 'sawtooth', 0.24); },
+  win: () => { tone(660, 0, 0.12, 'triangle', 0.3); tone(880, 0.11, 0.12, 'triangle', 0.3); tone(1320, 0.22, 0.28, 'triangle', 0.3); },
+  flip: rustle,
+};
+function buzz(pattern) { try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* нет вибрации */ } }
+
+let wakeLock = null;
+async function keepAwake(on) {
+  try {
+    if (on && !wakeLock && navigator.wakeLock && document.visibilityState === 'visible') {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch (e) { wakeLock = null; /* браузер не разрешил — экран может погаснуть */ }
+}
+document.addEventListener('visibilitychange', () => { if (view.screen === 'game') keepAwake(true); });
+
+// ---------- Состояние экрана ----------
+const view = {
+  screen: game ? 'game' : 'setup',
+  phase: 'ready',        // ready | back | face | timeout | empty | winner
+  current: null,         // { card, no, way }
+  skipsLeft: 0,
+  left: 0, endAt: 0, timerId: 0,
+  anim: '', menu: false, confirmNew: false, reveal: null,
+};
+if (game && game.over) view.phase = 'winner';
+
+const $ = (s, r) => (r || document).querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function plural(n, forms) {
+  const a = Math.abs(n) % 100, b = a % 10;
+  return forms[a > 10 && a < 20 ? 2 : b === 1 ? 0 : b >= 2 && b <= 4 ? 1 : 2];
+}
+function say(text) { const l = $('#live'); l.textContent = ''; setTimeout(() => { l.textContent = text; }, 30); }
+
+// ---------- Таймер ----------
+function startTimer() {
+  stopTimer();
+  if (!settings.timer) return;
+  view.endAt = performance.now() + settings.timer * 1000;
+  view.left = settings.timer;
+  view.timerId = setInterval(stepTimer, 200);
+  paintClock();
+}
+function stepTimer() {
+  const left = Math.max(0, Math.ceil((view.endAt - performance.now()) / 1000));
+  if (left === view.left) return;
+  view.left = left;
+  paintClock();
+  if (left > 0 && left <= 10) { sfx.tick(); if (left === 10) buzz(60); }
+  if (left === 0) timeUp();
+}
+function stopTimer() { clearInterval(view.timerId); view.timerId = 0; }
+function timeUp() {
+  stopTimer();
+  view.phase = 'timeout';
+  sfx.end(); buzz([300, 120, 300, 120, 500]);
+  say('Время вышло');
+  render();
+}
+function paintClock() {
+  const el = $('#clock'); if (!el) return;
+  const p = view.phase;
+  el.className = 'clock';
+  if (!settings.timer) { el.textContent = p === 'face' ? 'без таймера' : ''; el.classList.add('off'); return; }
+  if (p === 'face') { el.textContent = view.left; if (view.left <= 10) el.classList.add('hurry'); }
+  else if (p === 'timeout') { el.textContent = '0'; el.classList.add('hurry'); }
+  else if (p === 'back') { el.textContent = settings.timer; el.classList.add('idle'); }
+  else { el.textContent = ''; }
+}
+
+// ---------- Разметка ----------
+const ICONS = {
+  on: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>',
+  off: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>',
+  menu: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>',
+};
+function stars(n) { return '★'.repeat(n) + '<i>' + '★'.repeat(3 - n) + '</i>'; }
+function taskClass(t) { return t.length > 52 ? ' xlong' : t.length > 30 ? ' long' : ''; }
+
+function wayBadge(way) {
+  const w = WAYS[way];
+  return w ? '<span class="badge">' + w.icon + w.name + '</span>' : '';
+}
+const BRAND = 'Твиглс Киношная<span class="dot">.</span>';
+
+function ticketFront(c, anim, way, showHint) {
+  const hint = settings.hint || showHint
+    ? '<div class="t-hint">' + esc(c[3]) + '</div>'
+    : '<div class="t-hint off">подсказка скрыта</div>';
+  const w = WAYS[way];
+  return '<div class="ticket front ' + (anim || '') + '" role="group" aria-label="Билет">' +
+    '<div class="t-head">' +
+      '<div class="t-row"><span class="t-brand">' + BRAND + '</span><span class="stars" aria-label="Сложность ' + c[4] + ' из 3">' + stars(c[4]) + '</span></div>' +
+      '<div class="t-cat">' + CATS[c[1]].label + '</div>' +
+    '</div>' +
+    '<div class="t-perf"></div>' +
+    '<div class="t-body">' +
+      (w ? '<div class="t-way">' + wayBadge(way) + '<p>' + w.rule + '</p></div>' : '') +
+      '<div class="t-task' + taskClass(c[2]) + '">' + esc(c[2]) + '</div>' + hint +
+    '</div>' +
+  '</div>';
+}
+function ticketBack(anim, cta, way) {
+  return '<div class="ticket back ' + (anim || '') + '"' + (cta ? ' role="button" tabindex="0" id="open" aria-label="Открыть билет"' : '') + '>' +
+    '<div class="t-head"><div class="t-row"><span class="t-brand">' + BRAND + '</span><span class="t-q">?</span></div></div>' +
+    '<div class="t-perf"></div>' +
+    '<div class="t-body"><div class="back-panel"><small>ТВИГЛС</small><div class="back-name">Киношная<span class="dot">.</span></div>' +
+      (way !== undefined ? wayBadge(way) : '') +
+      (cta ? '<div class="back-cta">Нажми, чтобы открыть</div>' : '') + '</div></div>' +
+  '</div>';
+}
+
+function header(play) {
+  return '<header class="bar">' +
+    '<div class="brand"><small>ТВИГЛС</small>Киношная<span class="dot">.</span></div>' +
+    '<div class="clock" id="clock" aria-live="off"></div>' +
+    '<div class="tools">' +
+      '<button class="icon-btn" data-act="sound" aria-label="' + (settings.sound ? 'Выключить звук' : 'Включить звук') + '" aria-pressed="' + settings.sound + '">' + (settings.sound ? ICONS.on : ICONS.off) + '</button>' +
+      (play ? '<button class="icon-btn" data-act="menu" aria-label="Меню игры">' + ICONS.menu + '</button>' : '') +
+    '</div></header>';
+}
+
+function scoreStrip() {
+  if (!game || game.mode !== 'team') return '';
+  const chips = game.teams.map((t, i) =>
+    '<div class="team' + (i === game.turn && view.phase !== 'winner' ? ' now' : '') + '"><span>' + esc(t) + '</span><b>' + game.scores[i] + '</b></div>').join('');
+  const r = settings.rounds ? 'Раунд ' + Math.min(game.round, settings.rounds) + ' из ' + settings.rounds : 'Раунд ' + game.round;
+  return '<div class="round">' + r + '</div><div class="score">' + chips + '</div>';
+}
+
+// ---------- Экран настроек ----------
+function chip(act, val, label, on, extra) {
+  return '<button class="chip" data-act="' + act + '" data-val="' + val + '" aria-pressed="' + on + '">' + label + (extra || '') + '</button>';
+}
+function renderSetup() {
+  const s = settings;
+  const count = pool().length;
+  const inGame = !!game && !game.over;
+  const teams = s.mode === 'team'
+    ? '<div class="group"><span class="label">Команды</span><div class="teams-edit">' +
+      s.teams.map((t, i) => '<div class="team-row"><input id="team-' + i + '" data-team="' + i + '" maxlength="24" value="' + esc(t) + '" aria-label="Название команды ' + (i + 1) + '" placeholder="Команда ' + (i + 1) + '">' +
+        '<button class="icon-btn" data-act="team-del" data-val="' + i + '" aria-label="Убрать команду"' + (s.teams.length <= 2 ? ' disabled' : '') + '>✕</button></div>').join('') +
+      (s.teams.length < 6 ? '<div><button class="chip" data-act="team-add">+ Команда</button></div>' : '') +
+      '</div></div>' +
+      '<div class="group"><span class="label">Раунды</span><div class="chips">' +
+      [[3, '3'], [5, '5'], [0, 'Без ограничения']].map(([v, l]) => chip('rounds', v, l, s.rounds === v)).join('') + '</div></div>'
+    : '';
+  const allDiff = s.diffs.length === 3;
+  $('#app').className = '';
+  $('#app').innerHTML = header(false) +
+    '<main class="setup">' +
+      '<div class="hero"><div class="eyebrow">Гостиная Киношной</div><h1>Кино-<br>крокодил</h1>' +
+        '<p>Тяните билет и показывайте: жестами, голосом или рисунком. Каждое задание выпадает за игру один раз.</p></div>' +
+      '<div class="group"><span class="label">Режим</span><div class="seg">' +
+        chip('mode', 'free', 'Свободный', s.mode === 'free', '<small>счет ведет ведущий</small>') +
+        chip('mode', 'team', 'Командный', s.mode === 'team', '<small>2–6 команд, счет здесь</small>') +
+      '</div></div>' + teams +
+      '<div class="group"><span class="label">Как показывать (выпадает случайно)</span><div class="chips">' +
+        WAYS.map((w, i) => chip('way', i, w.name, s.ways.includes(i))).join('') + '</div></div>' +
+      '<div class="group"><span class="label">Категории</span><div class="chips">' +
+        CATS.map((c, i) => chip('cat', i, c.name, s.cats.includes(i))).join('') + '</div></div>' +
+      '<div class="group"><span class="label">Сложность</span><div class="chips">' +
+        DIFFS.map(([v, l]) => chip('diff', v, l + ' <span class="dot">' + '★'.repeat(v) + '</span>', !allDiff && s.diffs.includes(v) || false)).join('') +
+        chip('diff', 'all', 'Все', allDiff) + '</div></div>' +
+      '<div class="group"><span class="label">Происхождение</span><div class="chips">' +
+        [['foreign', 'Зарубежное'], ['ours', 'Наше'], ['all', 'Все']].map(([v, l]) => chip('origin', v, l, s.origin === v)).join('') + '</div></div>' +
+      '<div class="group"><span class="label">Таймер</span><div class="chips">' +
+        [[30, '30 с'], [60, '60 с'], [90, '90 с'], [0, 'Без таймера']].map(([v, l]) => chip('timer', v, l, s.timer === v)).join('') + '</div></div>' +
+      '<div class="group"><span class="label">Пропуск за ход</span><div class="chips">' +
+        [[0, 'Нельзя'], [1, '1 пропуск'], [-1, 'Без ограничения']].map(([v, l]) => chip('skips', v, l, s.skips === v)).join('') + '</div></div>' +
+      '<div class="group"><span class="label">Подсказка на билете (фильм, год)</span><div class="chips">' +
+        chip('hint', 1, 'Показывать', s.hint) + chip('hint', 0, 'Скрывать', !s.hint) + '</div></div>' +
+    '</main>' +
+    '<div class="start">' +
+      '<div class="note">' + (count ? 'В колоде ' + count + ' ' + plural(count, ['билет', 'билета', 'билетов']) : 'Под эти настройки нет заданий — добавьте категорию или сложность') + '</div>' +
+      (inGame ? '<div class="pair"><button class="btn" data-act="new-game"' + (count ? '' : ' disabled') + '>Новая игра</button><button class="btn main" data-act="resume">Продолжить</button></div>'
+              : '<button class="btn main big" data-act="new-game"' + (count ? '' : ' disabled') + '>Начать игру</button>') +
+    '</div>';
+  paintClock();
+}
+
+// ---------- Экран игры ----------
+function renderGame() {
+  const p = view.phase;
+  let stage = '', actions = '';
+  const left = remaining().length;
+
+  if (p === 'ready') {
+    const g = game;
+    let who, title;
+    if (g.mode === 'team') { who = g.turns ? 'Передайте телефон' : 'Первый ход'; title = 'Ход: ' + esc(g.teams[g.turn]); }
+    else { who = g.turns ? 'Передайте телефон следующему' : 'Готовы?'; title = g.turns ? 'Следующий показывающий' : 'Первый показывающий'; }
+    let result = '';
+    if (g.lastResult) {
+      const r = g.lastResult;
+      result = '<div class="result' + (r.ok ? ' good' : '') + '">' + (r.team ? esc(r.team) + ': ' : '') + (r.ok ? '<b>угадали, +1</b>' : 'не угадали') + '</div>';
+    }
+    stage = '<div class="turn anim-fade"><div class="eyebrow">' + who + '</div><h2>' + title + '</h2>' + result + '</div>' +
+      '<button class="deck-btn" data-act="draw" aria-label="Вытянуть билет"><div class="deck"><div class="layer a"></div><div class="layer b"></div>' + ticketBack('', false) + '</div></button>' +
+      '<div class="note">' + (left ? 'В колоде ' + left + ' ' + plural(left, ['билет', 'билета', 'билетов']) : 'Колода пуста') +
+        (g.mode === 'free' && g.turns ? ' · угадано ' + g.guessed + ' из ' + g.turns : '') + '</div>';
+    actions = '<button class="btn main big" data-act="draw">Вытянуть билет</button>' +
+      (g.last ? '<button class="btn" data-act="reveal">Показать задание всем</button>' : '');
+  } else if (p === 'back') {
+    stage = '<div class="note">Отвернитесь от зрителей и нажмите на билет</div>' +
+      '<div class="ticket-wrap">' + ticketBack(view.anim, true, view.current.way) + '</div>';
+    actions = '<button class="btn main big" data-act="open">Открыть билет</button>';
+  } else if (p === 'face' || p === 'timeout') {
+    stage = '<div class="ticket-wrap">' + ticketFront(view.current.card, view.anim, view.current.way) + '</div>';
+    const canSkip = settings.skips === -1 || view.skipsLeft > 0;
+    if (p === 'face') {
+      const skipLabel = settings.skips === 0 ? 'Пропуск нельзя' : canSkip ? 'Пропуск' : 'Пропуск уже был';
+      actions = '<div class="row"><button class="btn" data-act="skip"' + (canSkip ? '' : ' disabled') + '>' + skipLabel + '</button>' +
+        '<button class="btn main" data-act="guessed">Угадали!</button></div>' +
+        '<button class="link" data-act="missed">Закончить ход без очка</button>';
+    } else {
+      stage = '<div class="eyebrow" style="text-align:center">Время вышло</div>' + stage;
+      actions = '<div class="row"><button class="btn" data-act="missed">Не угадали</button><button class="btn main" data-act="guessed">Угадали!</button></div>';
+    }
+  } else if (p === 'empty') {
+    stage = '<div class="panel anim-fade"><div class="eyebrow">Все билеты вытянуты</div><h2>Колода пуста</h2>' +
+      '<p>Задания в выбранных категориях закончились. Перемешайте колоду заново или добавьте категории в настройках.</p></div>';
+    actions = '<button class="btn main big" data-act="reshuffle">Перемешать заново</button><button class="btn" data-act="settings">Настройки</button>';
+  } else if (p === 'winner') {
+    stage = winnerTicket();
+    actions = '<button class="btn main big" data-act="new-game">Новая игра</button><button class="btn" data-act="settings">Настройки и команды</button>';
+  }
+
+  $('#app').className = 'play';
+  $('#app').innerHTML = header(true) + scoreStrip() + '<main class="stage">' + stage + '</main><div class="actions">' + actions + '</div>';
+  view.anim = '';
+  paintClock();
+}
+
+function winnerTicket() {
+  const g = game;
+  const best = Math.max.apply(null, g.scores);
+  const leaders = g.teams.filter((t, i) => g.scores[i] === best);
+  const order = g.teams.map((t, i) => [t, g.scores[i]]).sort((a, b) => b[1] - a[1]);
+  const title = leaders.length > 1 ? 'Ничья' : esc(leaders[0]);
+  const sub = leaders.length > 1 ? leaders.map(esc).join(' и ') : best + ' ' + plural(best, ['очко', 'очка', 'очков']);
+  return '<div class="ticket-wrap"><div class="ticket front anim-draw">' +
+    '<div class="t-head">' +
+      '<div class="t-row"><span class="t-brand">' + BRAND + '</span><span class="stars">★★★</span></div>' +
+      '<div class="t-cat">Победитель</div>' +
+    '</div>' +
+    '<div class="t-perf"></div>' +
+    '<div class="t-body">' +
+      '<div class="t-task' + taskClass(title) + '">' + title + '</div>' +
+      '<div class="t-hint">' + sub + '</div>' +
+      '<div class="win-list">' + order.map(([t, s]) => '<div><span>' + esc(t) + '</span><b>' + s + '</b></div>').join('') + '</div>' +
+    '</div></div></div>';
+}
+
+function renderLayer() {
+  const layer = $('#layer');
+  if (view.reveal) {
+    const r = view.reveal;
+    layer.innerHTML = '<div class="reveal anim-fade" role="dialog" aria-label="Задание для всех">' +
+      '<div class="ticket-wrap">' + ticketFront(r.card, '', r.way, true) + '</div>' +
+      '<button class="btn main big" data-act="reveal-close">Закрыть</button></div>';
+    return;
+  }
+  if (view.menu) {
+    const team = game && game.mode === 'team';
+    layer.innerHTML = '<div class="sheet-bg" data-act="menu-close"><div class="sheet" role="dialog" aria-label="Меню игры">' +
+      '<h3>Игра</h3>' +
+      '<button class="btn" data-act="settings">Настройки и команды</button>' +
+      (team && !game.over ? '<button class="btn" data-act="finish">Завершить и показать победителя</button>' : '') +
+      (view.confirmNew
+        ? '<button class="btn warn" data-act="new-game">Да, сбросить счет и колоду</button>'
+        : '<button class="btn" data-act="ask-new">Новая игра</button>') +
+      '<button class="btn" data-act="menu-close">Вернуться к игре</button>' +
+      '</div></div>';
+    return;
+  }
+  layer.innerHTML = '';
+}
+
+function render() {
+  if (view.screen === 'setup') renderSetup(); else renderGame();
+  renderLayer();
+}
+
+// ---------- Ходы ----------
+function goGame() {
+  // Переименования команд в настройках подхватываются, если их число не менялось.
+  if (game.mode === 'team' && settings.teams.length === game.teams.length) {
+    game.teams = settings.teams.map((t, i) => t.trim() || 'Команда ' + (i + 1));
+  }
+  view.screen = 'game';
+  view.phase = game.over ? 'winner' : 'ready';
+  keepAwake(true);
+  render();
+}
+function draw(skip) {
+  const next = drawCard();
+  if (!next) {
+    view.phase = 'empty'; render(); return;
+  }
+  view.current = next;
+  if (skip) {
+    view.phase = 'face'; view.anim = 'anim-draw';
+  } else {
+    view.phase = 'back'; view.anim = 'anim-draw';
+    view.skipsLeft = settings.skips === -1 ? Infinity : settings.skips;
+  }
+  sfx.flip();
+  render();
+  if (!skip) { const t = $('#open'); if (t) t.focus({ preventScroll: true }); }
+}
+function openTicket() {
+  if (view.phase !== 'back' || view.opening) return;
+  view.opening = true;
+  const t = $('.ticket.back');
+  const finish = () => {
+    view.opening = false;
+    view.phase = 'face'; view.anim = 'anim-flip-in';
+    startTimer();
+    render();
+    say('Билет открыт');
+  };
+  sfx.flip();
+  if (!t || matchMedia('(prefers-reduced-motion: reduce)').matches) return finish();
+  t.classList.add('anim-flip-out');
+  t.addEventListener('animationend', finish, { once: true });
+}
+function endTurn(ok) {
+  stopTimer();
+  const g = game;
+  g.turns += 1;
+  g.last = view.current;
+  const team = g.mode === 'team' ? g.teams[g.turn] : '';
+  if (ok) { g.guessed += 1; if (g.mode === 'team') g.scores[g.turn] += 1; sfx.win(); buzz(40); }
+  g.lastResult = { ok, team };
+  if (g.mode === 'team') {
+    g.turn = (g.turn + 1) % g.teams.length;
+    if (g.turn === 0) {
+      g.round += 1;
+      if (settings.rounds && g.round > settings.rounds) g.over = true;
+    }
+  }
+  view.current = null;
+  view.phase = g.over ? 'winner' : 'ready';
+  persist();
+  render();
+  if (g.over) sfx.win();
+}
+
+// ---------- Нажатия ----------
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-act]');
+  if (!el) { if (view.phase === 'back' && e.target.closest('.ticket.back')) openTicket(); return; }
+  if (el.disabled) return;
+  if (el.dataset.act === 'menu-close' && el !== e.target && el.classList.contains('sheet-bg')) return; // клик внутри меню
+  ac(); // звук разрешается только после нажатия
+  const v = el.dataset.val;
+  const s = settings;
+  switch (el.dataset.act) {
+    case 'mode': s.mode = v; break;
+    case 'cat': {
+      const i = +v;
+      if (s.cats.includes(i)) { if (s.cats.length > 1) s.cats = s.cats.filter((x) => x !== i); }
+      else s.cats = s.cats.concat(i).sort();
+      break;
+    }
+    case 'diff':
+      if (v === 'all') s.diffs = [1, 2, 3];
+      else if (s.diffs.length === 3) s.diffs = [+v];
+      else if (s.diffs.includes(+v)) { if (s.diffs.length > 1) s.diffs = s.diffs.filter((x) => x !== +v); }
+      else s.diffs = s.diffs.concat(+v).sort();
+      break;
+    case 'way': {
+      const i = +v;
+      if (s.ways.includes(i)) { if (s.ways.length > 1) s.ways = s.ways.filter((x) => x !== i); }
+      else s.ways = s.ways.concat(i).sort();
+      break;
+    }
+    case 'origin': s.origin = v; break;
+    case 'timer': s.timer = +v; break;
+    case 'skips': s.skips = +v; break;
+    case 'hint': s.hint = v === '1'; break;
+    case 'rounds': s.rounds = +v; break;
+    case 'team-add': if (s.teams.length < 6) s.teams.push('Команда ' + (s.teams.length + 1)); break;
+    case 'team-del': if (s.teams.length > 2) s.teams.splice(+v, 1); break;
+    case 'sound': s.sound = !s.sound; if (s.sound) ac(); break;
+    case 'new-game':
+      newGame(); view.menu = false; view.confirmNew = false; view.reveal = null; stopTimer(); goGame(); return;
+    case 'resume': goGame(); return;
+    case 'menu': view.menu = true; view.confirmNew = false; renderLayer(); return;
+    case 'menu-close': view.menu = false; renderLayer(); return;
+    case 'ask-new': view.confirmNew = true; renderLayer(); return;
+    case 'settings':
+      stopTimer(); view.menu = false; view.screen = 'setup'; keepAwake(false); persist(); render(); window.scrollTo(0, 0); return;
+    case 'finish': stopTimer(); game.over = true; view.menu = false; view.phase = 'winner'; persist(); render(); sfx.win(); return;
+    case 'draw': draw(false); return;
+    case 'open': openTicket(); return;
+    case 'skip':
+      if (view.phase !== 'face') return;
+      if (!remaining().length) { say('Колода пуста, пропуск невозможен'); return; }
+      if (settings.skips !== -1) view.skipsLeft -= 1;
+      draw(true); return;
+    case 'guessed': if (view.phase === 'face' || view.phase === 'timeout') endTurn(true); return;
+    case 'missed': if (view.phase === 'face' || view.phase === 'timeout') endTurn(false); return;
+    case 'reshuffle': game.used = []; persist(); view.phase = 'ready'; render(); return;
+    case 'reveal': view.reveal = game.last; renderLayer(); return;
+    case 'reveal-close': view.reveal = null; renderLayer(); return;
+    default: return;
+  }
+  persist();
+  render();
+});
+document.addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.id === 'open') { e.preventDefault(); openTicket(); }
+  if (e.key === 'Escape' && (view.menu || view.reveal)) { view.menu = false; view.reveal = null; renderLayer(); }
+});
+document.addEventListener('input', (e) => {
+  const i = e.target.dataset && e.target.dataset.team;
+  if (i === undefined) return;
+  settings.teams[+i] = e.target.value;
+  persist();
+});
+
+render();
+if (view.screen === 'game') keepAwake(true);
+</script>
+
+</body></html>
